@@ -6,7 +6,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.JoinColumn;
 import lombok.Getter;
@@ -15,8 +14,8 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "categorie")
-public class Categorie {
+@Table(name = "competence")
+public class Competence {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,13 +24,9 @@ public class Categorie {
     @Column(nullable = false, unique = true)
     private String nom;
 
-    @Column(nullable = false)
-    private String urlPhoto;
-
-    @OneToMany(mappedBy = "categorie")
-    private java.util.Set<Mission> missions;
-
     @ManyToOne(optional = false)
     @JoinColumn(name = "administrateur_id", nullable = false)
     private Administrateur administrateur;
 }
+
+
