@@ -16,10 +16,14 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.ManyToOne;
 import java.util.Date;
 import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "paiement")
 public class Paiement {

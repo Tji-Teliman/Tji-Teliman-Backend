@@ -14,10 +14,14 @@ import jakarta.persistence.TemporalType;
 import jakarta.persistence.Transient;
 import java.util.Date;
 import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "message")
 public class Message {

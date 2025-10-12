@@ -20,10 +20,14 @@ import jakarta.persistence.UniqueConstraint;
 import java.util.Date;
 import java.util.Set;
 import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "candidature", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"jeune_prestateur_id", "mission_id"})

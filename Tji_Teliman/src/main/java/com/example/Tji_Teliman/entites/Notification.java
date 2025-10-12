@@ -11,9 +11,13 @@ import jakarta.persistence.TemporalType;
 import java.util.Date;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "notification")
 public class Notification {
