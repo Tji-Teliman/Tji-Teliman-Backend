@@ -1,10 +1,8 @@
 package com.example.Tji_Teliman.entites;
 
 import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
@@ -29,13 +27,8 @@ public class JeunePrestateur extends Utilisateur {
 
     private String localisation;
 
-    @ManyToMany
-    @JoinTable(
-        name = "jeune_prestateur_competence",
-        joinColumns = @JoinColumn(name = "jeune_prestateur_id"),
-        inverseJoinColumns = @JoinColumn(name = "competence_id")
-    )
-    private List<Competence> competences;
+    @OneToMany(mappedBy = "jeunePrestateur", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<JeuneCompetence> competences;
 
     private String urlPhoto;
 

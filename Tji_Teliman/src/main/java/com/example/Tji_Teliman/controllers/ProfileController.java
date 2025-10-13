@@ -1,6 +1,7 @@
 package com.example.Tji_Teliman.controllers;
 
 import com.example.Tji_Teliman.services.ProfileService;
+import com.example.Tji_Teliman.dto.JeunePrestateurProfileDTO;
 import java.util.List;
 import java.io.IOException;
 import java.util.Date;
@@ -30,15 +31,14 @@ public class ProfileController {
         @RequestParam(required = false) String localisation,
         @RequestParam(required = false) MultipartFile photo,
         @RequestParam(required = false) MultipartFile carteIdentite,
-        @RequestParam(required = false) List<Long> competencesIds
+        @RequestParam(required = false) List<String> competences
     ) throws IOException {
         var jeune = profileService.updateJeune(id, dateNaissance, localisation, photo, carteIdentite);
-        // Optionnel: associer les compétences si fournies (appel simple via service)
-        // On le fait ici pour rester simple côté front
-        if (competencesIds != null && !competencesIds.isEmpty()) {
-            jeune = profileService.setCompetencesJeune(id, competencesIds);
+        if (competences != null && !competences.isEmpty()) {
+            jeune = profileService.setCompetencesJeune(id, new java.util.ArrayList<>(competences));
         }
-        return ResponseEntity.ok(jeune);
+        JeunePrestateurProfileDTO dto = profileService.toProfileDTO(jeune);
+        return ResponseEntity.ok(dto);
     }
 
     @PostMapping("/recruteurs/particulier/{id}")

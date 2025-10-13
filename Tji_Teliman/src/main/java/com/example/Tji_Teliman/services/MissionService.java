@@ -1,4 +1,105 @@
 package com.example.Tji_Teliman.services;
 
+import com.example.Tji_Teliman.entites.Categorie;
+import com.example.Tji_Teliman.entites.Mission;
+import com.example.Tji_Teliman.entites.Recruteur;
+import com.example.Tji_Teliman.entites.enums.StatutMission;
+import com.example.Tji_Teliman.dto.MissionDTO;
+import com.example.Tji_Teliman.repository.CategorieRepository;
+import com.example.Tji_Teliman.repository.MissionRepository;
+import com.example.Tji_Teliman.repository.RecruteurRepository;
+import java.util.Date;
+import java.util.List;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
 public class MissionService {
+
+    private final MissionRepository missionRepository;
+    private final RecruteurRepository recruteurRepository;
+    private final CategorieRepository categorieRepository;
+
+    public MissionService(MissionRepository missionRepository, RecruteurRepository recruteurRepository, CategorieRepository categorieRepository) {
+        this.missionRepository = missionRepository;
+        this.recruteurRepository = recruteurRepository;
+        this.categorieRepository = categorieRepository;
+    }
+
+    @Transactional
+    public Mission create(Long recruteurId, String titre, String description, String exigence, Date dateDebut, Date dateFin, String localisation, Double remuneration, String categorieNom) {
+        Recruteur r = recruteurRepository.findById(recruteurId).orElseThrow(() -> new IllegalArgumentException("Recruteur introuvable"));
+        Categorie c = categorieRepository.findByNomIgnoreCase(categorieNom).orElseThrow(() -> new IllegalArgumentException("Catégorie introuvable"));
+        Mission m = new Mission();
+        m.setTitre(titre);
+        m.setDescription(description);
+        m.setExigence(exigence);
+        m.setDateDebut(dateDebut);
+        m.setDateFin(dateFin);
+        m.setLocalisation(localisation);
+        m.setRemuneration(remuneration);
+        m.setDatePublication(new Date());
+        m.setStatut(StatutMission.EN_ATTENTE);
+        m.setRecruteur(r);
+        m.setCategorie(c);
+        return missionRepository.save(m);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Mission> listAll() {
+        return missionRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Mission> listByRecruteur(Long recruteurId) {
+        return missionRepository.findAll().stream().filter(m -> m.getRecruteur() != null && m.getRecruteur().getId().equals(recruteurId)).toList();
+    }
+
+    @Transactional
+    public Mission update(Long id, String titre, String description, String exigence, Date dateDebut, Date dateFin, String localisation, Double remuneration, String categorieNom, StatutMission statut) {
+        Mission m = missionRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Mission introuvable"));
+        if (titre != null && !titre.trim().isEmpty()) m.setTitre(titre);
+        if (description != null && !description.trim().isEmpty()) m.setDescription(description);
+        if (exigence != null && !exigence.trim().isEmpty()) m.setExigence(exigence);
+        if (dateDebut != null) m.setDateDebut(dateDebut);
+        if (dateFin != null) m.setDateFin(dateFin);
+        if (localisation != null) m.setLocalisation(localisation);
+        if (remuneration != null) m.setRemuneration(remuneration);
+        if (statut != null) m.setStatut(statut);
+        if (categorieNom != null && !categorieNom.trim().isEmpty()) {
+            Categorie c = categorieRepository.findByNomIgnoreCase(categorieNom).orElseThrow(() -> new IllegalArgumentException("Catégorie introuvable"));
+            m.setCategorie(c);
+        }
+        return missionRepository.save(m);
+    }
+
+    @Transactional(readOnly = true)
+    public MissionDTO toDTO(Mission m) {
+        MissionDTO dto = new MissionDTO();
+        dto.setId(m.getId());
+        dto.setTitre(m.getTitre());
+        dto.setDescription(m.getDescription());
+        dto.setDateDebut(m.getDateDebut());
+        dto.setDateFin(m.getDateFin());
+        dto.setLocalisation(m.getLocalisation());
+        dto.setRemuneration(m.getRemuneration());
+        dto.setDatePublication(m.getDatePublication());
+        dto.setStatut(m.getStatut() == null ? null : m.getStatut().name());
+        if (m.getCategorie() != null) {
+            dto.setCategorieNom(m.getCategorie().getNom());
+            dto.setCategorieUrlPhoto(m.getCategorie().getUrlPhoto());
+        }
+        if (m.getRecruteur() != null) {
+            dto.setRecruteurId(m.getRecruteur().getId());
+            dto.setRecruteurNom(m.getRecruteur().getNom());
+            dto.setRecruteurPrenom(m.getRecruteur().getPrenom());
+        }
+        return dto;
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        if (!missionRepository.existsById(id)) throw new IllegalArgumentException("Mission introuvable");
+        missionRepository.deleteById(id);
+    }
 }

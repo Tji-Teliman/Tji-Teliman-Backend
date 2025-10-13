@@ -39,6 +39,9 @@ public class Mission {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 
+    @Column(columnDefinition = "TEXT")
+    private String exigence;
+
     @Temporal(TemporalType.DATE)
     private Date dateDebut;
 
