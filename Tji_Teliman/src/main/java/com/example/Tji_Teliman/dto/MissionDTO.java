@@ -8,6 +8,7 @@ public class MissionDTO {
     private String description;
     private Date dateDebut;
     private Date dateFin;
+    private Long dure;
     private String localisation;
     private Double remuneration;
     private Date datePublication;
@@ -28,6 +29,8 @@ public class MissionDTO {
     public void setDateDebut(Date dateDebut) { this.dateDebut = dateDebut; }
     public Date getDateFin() { return dateFin; }
     public void setDateFin(Date dateFin) { this.dateFin = dateFin; }
+    public Long getDure() { return dure; }
+    public void setDure(Long dure) { this.dure = dure; }
     public String getLocalisation() { return localisation; }
     public void setLocalisation(String localisation) { this.localisation = localisation; }
     public Double getRemuneration() { return remuneration; }
