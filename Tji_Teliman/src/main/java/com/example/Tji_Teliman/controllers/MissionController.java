@@ -80,4 +80,10 @@ public class MissionController {
             return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
         }
     }
+
+    @PostMapping("/verifier-terminaison")
+    public ResponseEntity<?> verifierTerminaison() {
+        missionService.verifierMissionsTerminees();
+        return ResponseEntity.ok(new ApiResponse(true, "Vérification des missions terminées effectuée", null));
+    }
 }

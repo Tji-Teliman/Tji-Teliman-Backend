@@ -76,4 +76,20 @@ public class CandidatureController {
             return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
         }
     }
+
+    @GetMapping("/jeune/{jeuneId}/missions-accomplies")
+    public ResponseEntity<?> getMissionsAccompliesByJeune(@PathVariable Long jeuneId) {
+        try {
+            List<CandidatureDTO> missionsAccomplies = candidatureService.getMissionsAccompliesByJeune(jeuneId);
+            Long nombreMissions = candidatureService.getNombreMissionsAccompliesByJeune(jeuneId);
+            
+            var response = new java.util.HashMap<String, Object>();
+            response.put("nombreMissions", nombreMissions);
+            response.put("missions", missionsAccomplies);
+            
+            return ResponseEntity.ok(new ApiResponse(true, "Missions accomplies récupérées", response));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
+        }
+    }
 }

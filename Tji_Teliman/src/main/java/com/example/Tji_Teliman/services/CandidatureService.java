@@ -27,18 +27,21 @@ public class CandidatureService {
     private final JeunePrestateurRepository jeunePrestateurRepository;
     private final MissionRepository missionRepository;
     private final MissionService missionService;
+    private final NotificationService notificationService;
 
     public CandidatureService(
             CandidatureRepository candidatureRepository,
             MotivationRepository motivationRepository,
             JeunePrestateurRepository jeunePrestateurRepository,
             MissionRepository missionRepository,
-            MissionService missionService) {
+            MissionService missionService,
+            NotificationService notificationService) {
         this.candidatureRepository = candidatureRepository;
         this.motivationRepository = motivationRepository;
         this.jeunePrestateurRepository = jeunePrestateurRepository;
         this.missionRepository = missionRepository;
         this.missionService = missionService;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -167,7 +170,10 @@ public class CandidatureService {
         mission.setStatut(StatutMission.EN_COURS);
         missionRepository.save(mission);
         
-        return candidatureRepository.save(candidature);
+        Candidature saved = candidatureRepository.save(candidature);
+        // Notification au jeune
+        notificationService.notifyCandidatureAcceptee(saved.getJeunePrestateur(), saved);
+        return saved;
     }
     
     @Transactional
@@ -189,5 +195,28 @@ public class CandidatureService {
         candidature.setStatut(StatutCandidature.REFUSEE);
         
         return candidatureRepository.save(candidature);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CandidatureDTO> getMissionsAccompliesByJeune(Long jeunePrestateurId) {
+        JeunePrestateur jeunePrestateur = jeunePrestateurRepository.findById(jeunePrestateurId)
+                .orElseThrow(() -> new IllegalArgumentException("Jeune prestateur introuvable"));
+        
+        return candidatureRepository.findByJeunePrestateur(jeunePrestateur).stream()
+                .filter(c -> c.getStatut() == StatutCandidature.ACCEPTEE && 
+                           c.getMission().getStatut() == StatutMission.TERMINEE)
+                .map(this::toCandidatureDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Long getNombreMissionsAccompliesByJeune(Long jeunePrestateurId) {
+        JeunePrestateur jeunePrestateur = jeunePrestateurRepository.findById(jeunePrestateurId)
+                .orElseThrow(() -> new IllegalArgumentException("Jeune prestateur introuvable"));
+        
+        return candidatureRepository.findByJeunePrestateur(jeunePrestateur).stream()
+                .filter(c -> c.getStatut() == StatutCandidature.ACCEPTEE && 
+                           c.getMission().getStatut() == StatutMission.TERMINEE)
+                .count();
     }
 }
