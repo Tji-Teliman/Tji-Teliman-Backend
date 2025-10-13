@@ -14,8 +14,12 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
+import jakarta.persistence.Transient;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import java.util.Date;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -48,6 +52,9 @@ public class Mission {
     @Temporal(TemporalType.DATE)
     private Date dateFin;
 
+    @Transient
+    private Long dure; // Durée en jours
+
     private String localisation;
 
     private Double remuneration;
@@ -69,4 +76,21 @@ public class Mission {
 
     @OneToMany(mappedBy = "mission")
     private Set<Candidature> candidatures;
+    
+    @PrePersist
+    @PreUpdate
+    private void validateDates() {
+        if (dateDebut != null && dateFin != null && dateFin.before(dateDebut)) {
+            throw new IllegalArgumentException("La date de fin ne peut pas être antérieure à la date de début");
+        }
+    }
+    
+    @Transient
+    public Long getDure() {
+        if (dateDebut == null || dateFin == null) {
+            return null;
+        }
+        long diffInMillies = Math.abs(dateFin.getTime() - dateDebut.getTime());
+        return TimeUnit.DAYS.convert(diffInMillies, TimeUnit.MILLISECONDS);
+    }
 }

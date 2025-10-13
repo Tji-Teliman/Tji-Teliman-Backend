@@ -81,6 +81,7 @@ public class MissionService {
         dto.setDescription(m.getDescription());
         dto.setDateDebut(m.getDateDebut());
         dto.setDateFin(m.getDateFin());
+        dto.setDure(m.getDure());
         dto.setLocalisation(m.getLocalisation());
         dto.setRemuneration(m.getRemuneration());
         dto.setDatePublication(m.getDatePublication());
@@ -101,5 +102,20 @@ public class MissionService {
     public void delete(Long id) {
         if (!missionRepository.existsById(id)) throw new IllegalArgumentException("Mission introuvable");
         missionRepository.deleteById(id);
+    }
+
+    @Transactional
+    public void verifierMissionsTerminees() {
+        Date aujourdhui = new Date();
+        List<Mission> missions = missionRepository.findAll();
+        
+        for (Mission mission : missions) {
+            if (mission.getStatut() == StatutMission.EN_COURS && 
+                mission.getDateFin() != null && 
+                mission.getDateFin().before(aujourdhui)) {
+                mission.setStatut(StatutMission.TERMINEE);
+                missionRepository.save(mission);
+            }
+        }
     }
 }
