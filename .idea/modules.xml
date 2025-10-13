@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/Tji_Teliman.iml" filepath="$PROJECT_DIR$/.idea/Tji_Teliman.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/Tji-Teliman-Backend.iml" filepath="$PROJECT_DIR$/.idea/Tji-Teliman-Backend.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Tji_Teliman/Tji_Teliman.iml" filepath="$PROJECT_DIR$/Tji_Teliman/Tji_Teliman.iml" />
     </modules>
   </component>
 </project>
