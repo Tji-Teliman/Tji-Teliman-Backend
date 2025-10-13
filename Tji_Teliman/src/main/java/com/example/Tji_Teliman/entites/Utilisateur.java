@@ -5,6 +5,7 @@ import com.example.Tji_Teliman.entites.enums.TypeGenre;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Column;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
@@ -41,6 +42,7 @@ public abstract class Utilisateur {
     private String email;
 
     @Column(nullable = false)
+    @JsonIgnore
     private String motDePasse;
 
     @Column(nullable = false, unique = true)
