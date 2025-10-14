@@ -20,16 +20,18 @@ public class MissionService {
     private final RecruteurRepository recruteurRepository;
     private final CategorieRepository categorieRepository;
     private final NotificationService notificationService;
+    private final GoogleMapsService googleMapsService;
 
-    public MissionService(MissionRepository missionRepository, RecruteurRepository recruteurRepository, CategorieRepository categorieRepository, NotificationService notificationService) {
+    public MissionService(MissionRepository missionRepository, RecruteurRepository recruteurRepository, CategorieRepository categorieRepository, NotificationService notificationService, GoogleMapsService googleMapsService) {
         this.missionRepository = missionRepository;
         this.recruteurRepository = recruteurRepository;
         this.categorieRepository = categorieRepository;
         this.notificationService = notificationService;
+        this.googleMapsService = googleMapsService;
     }
 
     @Transactional
-    public Mission create(Long recruteurId, String titre, String description, String exigence, Date dateDebut, Date dateFin, String localisation, Double remuneration, String categorieNom, String heureDebut, String heureFin) {
+    public Mission create(Long recruteurId, String titre, String description, String exigence, Date dateDebut, Date dateFin, Double remuneration, String categorieNom, String heureDebut, String heureFin, Double latitude, Double longitude, String adresse, String placeId) {
         Recruteur r = recruteurRepository.findById(recruteurId).orElseThrow(() -> new IllegalArgumentException("Recruteur introuvable"));
         Categorie c = categorieRepository.findByNomIgnoreCase(categorieNom).orElseThrow(() -> new IllegalArgumentException("Catégorie introuvable"));
         Mission m = new Mission();
@@ -38,7 +40,20 @@ public class MissionService {
         m.setExigence(exigence);
         m.setDateDebut(dateDebut);
         m.setDateFin(dateFin);
-        m.setLocalisation(localisation);
+        // Si placeId fourni et clé présente, enrichir via Google (écrase les valeurs fournies)
+        if (placeId != null && !placeId.isBlank()) {
+            var details = googleMapsService.fetchPlaceDetails(placeId);
+            if (details != null) {
+                // Toujours utiliser les valeurs de Google Maps si placeId fourni
+                latitude = details.lat();
+                longitude = details.lng();
+                adresse = details.formattedAddress();
+            }
+        }
+        m.setLatitude(latitude);
+        m.setLongitude(longitude);
+        m.setAdresse(adresse);
+        m.setPlaceId(placeId);
         m.setRemuneration(remuneration);
         m.setDatePublication(new Date());
         if (heureDebut != null && !heureDebut.isEmpty()) m.setHeureDebut(java.time.LocalTime.parse(heureDebut));
@@ -55,19 +70,36 @@ public class MissionService {
     }
 
     @Transactional(readOnly = true)
+    public List<Mission> listEnAttente() {
+        return missionRepository.findByStatut(StatutMission.EN_ATTENTE);
+    }
+
+    @Transactional(readOnly = true)
     public List<Mission> listByRecruteur(Long recruteurId) {
         return missionRepository.findAll().stream().filter(m -> m.getRecruteur() != null && m.getRecruteur().getId().equals(recruteurId)).toList();
     }
 
     @Transactional
-    public Mission update(Long id, String titre, String description, String exigence, Date dateDebut, Date dateFin, String localisation, Double remuneration, String categorieNom, StatutMission statut, String heureDebut, String heureFin) {
+    public Mission update(Long id, String titre, String description, String exigence, Date dateDebut, Date dateFin, Double remuneration, String categorieNom, StatutMission statut, String heureDebut, String heureFin, Double latitude, Double longitude, String adresse, String placeId) {
         Mission m = missionRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Mission introuvable"));
         if (titre != null && !titre.trim().isEmpty()) m.setTitre(titre);
         if (description != null && !description.trim().isEmpty()) m.setDescription(description);
         if (exigence != null && !exigence.trim().isEmpty()) m.setExigence(exigence);
         if (dateDebut != null) m.setDateDebut(dateDebut);
         if (dateFin != null) m.setDateFin(dateFin);
-        if (localisation != null) m.setLocalisation(localisation);
+        if (placeId != null && !placeId.trim().isEmpty()) {
+            m.setPlaceId(placeId);
+            var details = googleMapsService.fetchPlaceDetails(placeId);
+            if (details != null) {
+                // Toujours utiliser les valeurs de Google Maps si placeId fourni
+                latitude = details.lat();
+                longitude = details.lng();
+                adresse = details.formattedAddress();
+            }
+        }
+        if (latitude != null) m.setLatitude(latitude);
+        if (longitude != null) m.setLongitude(longitude);
+        if (adresse != null && !adresse.trim().isEmpty()) m.setAdresse(adresse);
         if (remuneration != null) m.setRemuneration(remuneration);
         if (heureDebut != null && !heureDebut.isEmpty()) m.setHeureDebut(java.time.LocalTime.parse(heureDebut));
         if (heureFin != null && !heureFin.isEmpty()) m.setHeureFin(java.time.LocalTime.parse(heureFin));
@@ -88,7 +120,10 @@ public class MissionService {
         dto.setExigence(m.getExigence());
         dto.setDateDebut(m.getDateDebut());
         dto.setDateFin(m.getDateFin());
-        dto.setLocalisation(m.getLocalisation());
+        dto.setLatitude(m.getLatitude());
+        dto.setLongitude(m.getLongitude());
+        dto.setAdresse(m.getAdresse());
+        dto.setPlaceId(m.getPlaceId());
         dto.setRemuneration(m.getRemuneration());
         dto.setDatePublication(m.getDatePublication());
         dto.setStatut(m.getStatut() == null ? null : m.getStatut().name());

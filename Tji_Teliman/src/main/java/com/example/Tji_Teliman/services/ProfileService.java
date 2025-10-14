@@ -28,20 +28,22 @@ public class ProfileService {
     private final FileStorageService storageService;
     private final CompetenceRepository competenceRepository;
     private final CandidatureService candidatureService;
+    private final GoogleMapsService googleMapsService;
 
-    public ProfileService(JeunePrestateurRepository jeuneRepo, RecruteurRepository recruteurRepo, FileStorageService storageService, CompetenceRepository competenceRepository, CandidatureService candidatureService) {
+    public ProfileService(JeunePrestateurRepository jeuneRepo, RecruteurRepository recruteurRepo, FileStorageService storageService, CompetenceRepository competenceRepository, CandidatureService candidatureService, GoogleMapsService googleMapsService) {
         this.jeuneRepo = jeuneRepo;
         this.recruteurRepo = recruteurRepo;
         this.storageService = storageService;
         this.competenceRepository = competenceRepository;
         this.candidatureService = candidatureService;
+        this.googleMapsService = googleMapsService;
     }
 
     @Transactional
-    public JeunePrestateur updateJeune(Long id, Date dateNaissance, String localisation, MultipartFile photo, MultipartFile carteIdentiteFile) throws IOException {
+    public JeunePrestateur updateJeune(Long id, Date dateNaissance, MultipartFile photo, MultipartFile carteIdentiteFile) throws IOException {
         JeunePrestateur j = jeuneRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("JeunePrestateur introuvable"));
         if (dateNaissance != null) j.setDateNaissance(dateNaissance);
-        if (localisation != null) j.setLocalisation(localisation);
+        // localisation deprecated: utiliser lat/lng/adresse/placeId
         if (carteIdentiteFile != null && !carteIdentiteFile.isEmpty()) {
             String pathCI = storageService.store(carteIdentiteFile, "jeunes");
             j.setCarteIdentite(pathCI);
@@ -51,6 +53,46 @@ public class ProfileService {
             j.setUrlPhoto(path);
         }
         return jeuneRepo.save(j);
+    }
+
+    @Transactional
+    public JeunePrestateur updateJeuneLocation(Long id, Double latitude, Double longitude, String adresse, String placeId) {
+        JeunePrestateur j = jeuneRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("JeunePrestateur introuvable"));
+        // Si placeId fourni et clé présente, enrichir via Google (écrase les valeurs fournies)
+        if (placeId != null && !placeId.isBlank()) {
+            var details = googleMapsService.fetchPlaceDetails(placeId);
+            if (details != null) {
+                // Toujours utiliser les valeurs de Google Maps si placeId fourni
+                latitude = details.lat();
+                longitude = details.lng();
+                adresse = details.formattedAddress();
+            }
+        }
+        j.setLatitude(latitude);
+        j.setLongitude(longitude);
+        j.setAdresse(adresse);
+        j.setPlaceId(placeId);
+        return jeuneRepo.save(j);
+    }
+
+    @Transactional
+    public Recruteur updateRecruteurLocation(Long id, Double latitude, Double longitude, String adresse, String placeId) {
+        Recruteur r = recruteurRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("Recruteur introuvable"));
+        // Si placeId fourni et clé présente, enrichir via Google (écrase les valeurs fournies)
+        if (placeId != null && !placeId.isBlank()) {
+            var details = googleMapsService.fetchPlaceDetails(placeId);
+            if (details != null) {
+                // Toujours utiliser les valeurs de Google Maps si placeId fourni
+                latitude = details.lat();
+                longitude = details.lng();
+                adresse = details.formattedAddress();
+            }
+        }
+        r.setLatitude(latitude);
+        r.setLongitude(longitude);
+        r.setAdresse(adresse);
+        r.setPlaceId(placeId);
+        return recruteurRepo.save(r);
     }
 
     @Transactional
@@ -94,7 +136,7 @@ public class ProfileService {
         dto.setGenre(j.getGenre().name());
         dto.setDateCreation(j.getDateCreation());
         dto.setDateNaissance(j.getDateNaissance());
-        dto.setLocalisation(j.getLocalisation());
+        dto.setLocalisation(j.getAdresse()); // utiliser adresse au lieu de localisation
         dto.setUrlPhoto(j.getUrlPhoto());
         dto.setCarteIdentite(j.getCarteIdentite());
         if (j.getCompetences() != null) {
@@ -130,7 +172,7 @@ public class ProfileService {
             dto.setRole(j.getRole().name());
             dto.setEmail(j.getEmail());
             dto.setTelephone(j.getTelephone());
-            dto.setLocalisation(j.getLocalisation());
+            dto.setLocalisation(j.getAdresse()); // utiliser adresse au lieu de localisation
             if (j.getCompetences() != null) {
                 dto.setCompetences(j.getCompetences().stream()
                     .filter(jc -> jc.getCompetence() != null)
@@ -162,14 +204,14 @@ public class ProfileService {
     }
 
     @Transactional
-    public Recruteur updateRecruteurParticulier(Long id, Date dateNaissance, String profession, String adresse, MultipartFile photo) throws IOException {
+    public Recruteur updateRecruteurParticulier(Long id, Date dateNaissance, String profession, MultipartFile photo) throws IOException {
         Recruteur r = recruteurRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("Recruteur introuvable"));
         if (r.getTypeRecruteur() != TypeRecruteur.PARTICULIER) {
             throw new IllegalArgumentException("Type du recruteur non PARTICULIER");
         }
         if (dateNaissance != null) r.setDateNaissance(dateNaissance);
         if (profession != null) r.setProfession(profession);
-        if (adresse != null) r.setAdresse(adresse);
+        // adresse deprecated: utiliser lat/lng/adresse/placeId via updateRecruteurLocation
         if (photo != null && !photo.isEmpty()) {
             String path = storageService.store(photo, "recruteurs");
             r.setUrlPhoto(path);
