@@ -9,6 +9,7 @@ import com.example.Tji_Teliman.repository.JeunePrestateurRepository;
 import com.example.Tji_Teliman.repository.RecruteurRepository;
 import com.example.Tji_Teliman.repository.CompetenceRepository;
 import com.example.Tji_Teliman.dto.JeunePrestateurProfileDTO;
+import com.example.Tji_Teliman.dto.UserProfileDTO;
 import com.example.Tji_Teliman.dto.MessageDTO;
 import com.example.Tji_Teliman.dto.NotationDTO;
 import com.example.Tji_Teliman.dto.CandidatureDTO;
@@ -26,12 +27,14 @@ public class ProfileService {
     private final RecruteurRepository recruteurRepo;
     private final FileStorageService storageService;
     private final CompetenceRepository competenceRepository;
+    private final CandidatureService candidatureService;
 
-    public ProfileService(JeunePrestateurRepository jeuneRepo, RecruteurRepository recruteurRepo, FileStorageService storageService, CompetenceRepository competenceRepository) {
+    public ProfileService(JeunePrestateurRepository jeuneRepo, RecruteurRepository recruteurRepo, FileStorageService storageService, CompetenceRepository competenceRepository, CandidatureService candidatureService) {
         this.jeuneRepo = jeuneRepo;
         this.recruteurRepo = recruteurRepo;
         this.storageService = storageService;
         this.competenceRepository = competenceRepository;
+        this.candidatureService = candidatureService;
     }
 
     @Transactional
@@ -100,16 +103,7 @@ public class ProfileService {
                 .map(jc -> jc.getCompetence().getNom())
                 .collect(Collectors.toList()));
         }
-        if (j.getMessages() != null) {
-            dto.setMessages(j.getMessages().stream().map(m -> {
-                MessageDTO md = new MessageDTO();
-                md.setId(m.getId());
-                md.setContenu(m.getContenu());
-                md.setDateMessage(m.getDateMessage());
-                md.setEnvoyeParRecruteur(m.isEnvoyeParRecruteur());
-                return md;
-            }).toList());
-        }
+        // Inclure seulement les notations si présentes
         if (j.getNotations() != null) {
             dto.setNotations(j.getNotations().stream().map(n -> {
                 NotationDTO nd = new NotationDTO();
@@ -120,16 +114,51 @@ public class ProfileService {
                 return nd;
             }).toList());
         }
-        if (j.getCandidatures() != null) {
-            dto.setCandidatures(j.getCandidatures().stream().map(c -> {
-                CandidatureDTO cd = new CandidatureDTO();
-                cd.setId(c.getId());
-                cd.setStatut(c.getStatut().name());
-                cd.setDateSoumission(c.getDateSoumission());
-                return cd;
-            }).toList());
-        }
         return dto;
+    }
+
+    @Transactional(readOnly = true)
+    public UserProfileDTO getUserProfile(Long userId) {
+        // Essayer JeunePrestateur
+        var jeuneOpt = jeuneRepo.findById(userId);
+        if (jeuneOpt.isPresent()) {
+            JeunePrestateur j = jeuneOpt.get();
+            UserProfileDTO dto = new UserProfileDTO();
+            dto.setId(j.getId());
+            dto.setNom(j.getNom());
+            dto.setPrenom(j.getPrenom());
+            dto.setRole(j.getRole().name());
+            dto.setEmail(j.getEmail());
+            dto.setTelephone(j.getTelephone());
+            dto.setLocalisation(j.getLocalisation());
+            if (j.getCompetences() != null) {
+                dto.setCompetences(j.getCompetences().stream()
+                    .filter(jc -> jc.getCompetence() != null)
+                    .map(jc -> jc.getCompetence().getNom())
+                    .toList());
+            }
+            dto.setNombreMissionsAccomplies(candidatureService.getNombreMissionsAccompliesByJeune(userId));
+            return dto;
+        }
+        // Essayer Recruteur
+        var recOpt = recruteurRepo.findById(userId);
+        if (recOpt.isPresent()) {
+            var r = recOpt.get();
+            UserProfileDTO dto = new UserProfileDTO();
+            dto.setId(r.getId());
+            dto.setNom(r.getNom());
+            dto.setPrenom(r.getPrenom());
+            dto.setRole(r.getRole().name());
+            dto.setEmail(r.getEmail());
+            dto.setTelephone(r.getTelephone());
+            // Utiliser l'adresse du recruteur comme localisation
+            dto.setLocalisation(r.getAdresse());
+            dto.setCompetences(null);
+            dto.setNombreMissionsPubliees(r.getMissions() == null ? 0L : (long) r.getMissions().size());
+            dto.setNombreMissionsAccomplies(null);
+            return dto;
+        }
+        throw new IllegalArgumentException("Utilisateur introuvable");
     }
 
     @Transactional

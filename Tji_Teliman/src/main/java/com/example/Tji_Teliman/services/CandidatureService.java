@@ -107,6 +107,16 @@ public class CandidatureService {
                 .map(this::toMotivationDTO)
                 .collect(Collectors.toList());
     }
+
+    @Transactional(readOnly = true)
+    public List<MotivationDTO> getMotivationsByMission(Long missionId) {
+        Mission mission = missionRepository.findById(missionId)
+                .orElseThrow(() -> new IllegalArgumentException("Mission introuvable"));
+        return candidatureRepository.findByMission(mission).stream()
+                .flatMap(c -> motivationRepository.findByCandidature(c).stream())
+                .map(this::toMotivationDTO)
+                .collect(Collectors.toList());
+    }
     
     // Changer de private à public
     public CandidatureDTO toCandidatureDTO(Candidature candidature) {

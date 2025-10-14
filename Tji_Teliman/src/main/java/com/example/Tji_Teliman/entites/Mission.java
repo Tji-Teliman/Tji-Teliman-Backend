@@ -17,6 +17,7 @@ import jakarta.persistence.TemporalType;
 import jakarta.persistence.Transient;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
+import java.time.LocalTime;
 import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -53,7 +54,10 @@ public class Mission {
     private Date dateFin;
 
     @Transient
-    private Long dure; // Durée en jours
+    private Long dureJours; // Durée en jours
+    
+    @Transient
+    private Long dureHeures; // Durée estimée en heures (en fonction des heures/jour)
 
     private String localisation;
 
@@ -77,6 +81,10 @@ public class Mission {
     @OneToMany(mappedBy = "mission")
     private Set<Candidature> candidatures;
     
+    private LocalTime heureDebut;
+    
+    private LocalTime heureFin;
+    
     @PrePersist
     @PreUpdate
     private void validateDates() {
@@ -86,11 +94,22 @@ public class Mission {
     }
     
     @Transient
-    public Long getDure() {
+    public Long getDureJours() {
         if (dateDebut == null || dateFin == null) {
             return null;
         }
         long diffInMillies = Math.abs(dateFin.getTime() - dateDebut.getTime());
         return TimeUnit.DAYS.convert(diffInMillies, TimeUnit.MILLISECONDS);
+    }
+    
+    @Transient
+    public Long getDureHeures() {
+        Long jours = getDureJours();
+        if (jours == null) return null;
+        if (heureDebut != null && heureFin != null) {
+            long heuresParJour = java.time.Duration.between(heureDebut, heureFin).toHours();
+            return jours * Math.max(0, heuresParJour);
+        }
+        return null;
     }
 }

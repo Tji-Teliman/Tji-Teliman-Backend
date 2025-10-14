@@ -34,7 +34,9 @@ public class MissionController {
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date dateFin,
         String localisation,
         Double remuneration,
-        String categorieNom
+        String categorieNom,
+        String heureDebut,
+        String heureFin
     ) {}
 
     public record ApiResponse(boolean success, String message, Object data) {}
@@ -42,7 +44,7 @@ public class MissionController {
     @PostMapping("/recruteur/{recruteurId}")
     public ResponseEntity<?> create(@PathVariable Long recruteurId, @RequestBody CreateMissionRequest req) {
         try {
-            Mission m = missionService.create(recruteurId, req.titre(), req.description(), req.exigence(), req.dateDebut(), req.dateFin(), req.localisation(), req.remuneration(), req.categorieNom());
+            Mission m = missionService.create(recruteurId, req.titre(), req.description(), req.exigence(), req.dateDebut(), req.dateFin(), req.localisation(), req.remuneration(), req.categorieNom(), req.heureDebut(), req.heureFin());
             MissionDTO dto = missionService.toDTO(m);
             return ResponseEntity.ok(new ApiResponse(true, "Mission créée", dto));
         } catch (IllegalArgumentException ex) {
@@ -55,15 +57,33 @@ public class MissionController {
         return ResponseEntity.ok(missionService.listAll().stream().map(missionService::toDTO).toList());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getById(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(new ApiResponse(true, "Mission", missionService.getById(id)));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
+        }
+    }
+
     @GetMapping
     public ResponseEntity<List<MissionDTO>> listByRecruteur(@PathVariable Long recruteurId) {
         return ResponseEntity.ok(missionService.listByRecruteur(recruteurId).stream().map(missionService::toDTO).toList());
     }
 
+    @GetMapping("/recruteur/{recruteurId}/stats")
+    public ResponseEntity<?> getMissionsByRecruteurWithCount(@PathVariable Long recruteurId) {
+        var missions = missionService.listByRecruteur(recruteurId).stream().map(missionService::toDTO).toList();
+        var resp = new java.util.HashMap<String, Object>();
+        resp.put("total", missions.size());
+        resp.put("missions", missions);
+        return ResponseEntity.ok(new ApiResponse(true, "Missions du recruteur", resp));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody CreateMissionRequest req) {
         try {
-            Mission m = missionService.update(id, req.titre(), req.description(), req.exigence(), req.dateDebut(), req.dateFin(), req.localisation(), req.remuneration(), req.categorieNom(), null);
+            Mission m = missionService.update(id, req.titre(), req.description(), req.exigence(), req.dateDebut(), req.dateFin(), req.localisation(), req.remuneration(), req.categorieNom(), null, req.heureDebut(), req.heureFin());
             MissionDTO dto = missionService.toDTO(m);
             return ResponseEntity.ok(new ApiResponse(true, "Mission mise à jour", dto));
         } catch (IllegalArgumentException ex) {

@@ -6,13 +6,18 @@ public class MissionDTO {
     private Long id;
     private String titre;
     private String description;
+    private String exigence;
     private Date dateDebut;
     private Date dateFin;
-    private Long dure;
+    // removed legacy 'dure'
     private String localisation;
     private Double remuneration;
     private Date datePublication;
     private String statut;
+    private String heureDebut;
+    private String heureFin;
+    private Long dureJours;
+    private Long dureHeures;
     private String categorieNom;
     private String categorieUrlPhoto;
     private Long recruteurId;
@@ -25,12 +30,20 @@ public class MissionDTO {
     public void setTitre(String titre) { this.titre = titre; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+    public String getExigence() { return exigence; }
+    public void setExigence(String exigence) { this.exigence = exigence; }
     public Date getDateDebut() { return dateDebut; }
     public void setDateDebut(Date dateDebut) { this.dateDebut = dateDebut; }
     public Date getDateFin() { return dateFin; }
     public void setDateFin(Date dateFin) { this.dateFin = dateFin; }
-    public Long getDure() { return dure; }
-    public void setDure(Long dure) { this.dure = dure; }
+    public String getHeureDebut() { return heureDebut; }
+    public void setHeureDebut(String heureDebut) { this.heureDebut = heureDebut; }
+    public String getHeureFin() { return heureFin; }
+    public void setHeureFin(String heureFin) { this.heureFin = heureFin; }
+    public Long getDureJours() { return dureJours; }
+    public void setDureJours(Long dureJours) { this.dureJours = dureJours; }
+    public Long getDureHeures() { return dureHeures; }
+    public void setDureHeures(Long dureHeures) { this.dureHeures = dureHeures; }
     public String getLocalisation() { return localisation; }
     public void setLocalisation(String localisation) { this.localisation = localisation; }
     public Double getRemuneration() { return remuneration; }
