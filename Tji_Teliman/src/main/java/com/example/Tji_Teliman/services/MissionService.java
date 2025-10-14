@@ -29,7 +29,7 @@ public class MissionService {
     }
 
     @Transactional
-    public Mission create(Long recruteurId, String titre, String description, String exigence, Date dateDebut, Date dateFin, String localisation, Double remuneration, String categorieNom) {
+    public Mission create(Long recruteurId, String titre, String description, String exigence, Date dateDebut, Date dateFin, String localisation, Double remuneration, String categorieNom, String heureDebut, String heureFin) {
         Recruteur r = recruteurRepository.findById(recruteurId).orElseThrow(() -> new IllegalArgumentException("Recruteur introuvable"));
         Categorie c = categorieRepository.findByNomIgnoreCase(categorieNom).orElseThrow(() -> new IllegalArgumentException("Catégorie introuvable"));
         Mission m = new Mission();
@@ -41,6 +41,8 @@ public class MissionService {
         m.setLocalisation(localisation);
         m.setRemuneration(remuneration);
         m.setDatePublication(new Date());
+        if (heureDebut != null && !heureDebut.isEmpty()) m.setHeureDebut(java.time.LocalTime.parse(heureDebut));
+        if (heureFin != null && !heureFin.isEmpty()) m.setHeureFin(java.time.LocalTime.parse(heureFin));
         m.setStatut(StatutMission.EN_ATTENTE);
         m.setRecruteur(r);
         m.setCategorie(c);
@@ -58,7 +60,7 @@ public class MissionService {
     }
 
     @Transactional
-    public Mission update(Long id, String titre, String description, String exigence, Date dateDebut, Date dateFin, String localisation, Double remuneration, String categorieNom, StatutMission statut) {
+    public Mission update(Long id, String titre, String description, String exigence, Date dateDebut, Date dateFin, String localisation, Double remuneration, String categorieNom, StatutMission statut, String heureDebut, String heureFin) {
         Mission m = missionRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Mission introuvable"));
         if (titre != null && !titre.trim().isEmpty()) m.setTitre(titre);
         if (description != null && !description.trim().isEmpty()) m.setDescription(description);
@@ -67,6 +69,8 @@ public class MissionService {
         if (dateFin != null) m.setDateFin(dateFin);
         if (localisation != null) m.setLocalisation(localisation);
         if (remuneration != null) m.setRemuneration(remuneration);
+        if (heureDebut != null && !heureDebut.isEmpty()) m.setHeureDebut(java.time.LocalTime.parse(heureDebut));
+        if (heureFin != null && !heureFin.isEmpty()) m.setHeureFin(java.time.LocalTime.parse(heureFin));
         if (statut != null) m.setStatut(statut);
         if (categorieNom != null && !categorieNom.trim().isEmpty()) {
             Categorie c = categorieRepository.findByNomIgnoreCase(categorieNom).orElseThrow(() -> new IllegalArgumentException("Catégorie introuvable"));
@@ -81,13 +85,17 @@ public class MissionService {
         dto.setId(m.getId());
         dto.setTitre(m.getTitre());
         dto.setDescription(m.getDescription());
+        dto.setExigence(m.getExigence());
         dto.setDateDebut(m.getDateDebut());
         dto.setDateFin(m.getDateFin());
-        dto.setDure(m.getDure());
         dto.setLocalisation(m.getLocalisation());
         dto.setRemuneration(m.getRemuneration());
         dto.setDatePublication(m.getDatePublication());
         dto.setStatut(m.getStatut() == null ? null : m.getStatut().name());
+        if (m.getHeureDebut() != null) dto.setHeureDebut(m.getHeureDebut().toString());
+        if (m.getHeureFin() != null) dto.setHeureFin(m.getHeureFin().toString());
+        dto.setDureJours(m.getDureJours());
+        dto.setDureHeures(m.getDureHeures());
         if (m.getCategorie() != null) {
             dto.setCategorieNom(m.getCategorie().getNom());
             dto.setCategorieUrlPhoto(m.getCategorie().getUrlPhoto());
@@ -98,6 +106,12 @@ public class MissionService {
             dto.setRecruteurPrenom(m.getRecruteur().getPrenom());
         }
         return dto;
+    }
+
+    @Transactional(readOnly = true)
+    public MissionDTO getById(Long id) {
+        Mission m = missionRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Mission introuvable"));
+        return toDTO(m);
     }
 
     @Transactional

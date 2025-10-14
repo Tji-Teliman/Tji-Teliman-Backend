@@ -1,5 +1,6 @@
 package com.example.Tji_Teliman.entites;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.example.Tji_Teliman.entites.enums.TypeRecruteur;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -47,17 +48,22 @@ public class Recruteur extends Utilisateur {
     private String siteWeb;
 
     @OneToMany(mappedBy = "recruteur")
+    @JsonIgnore
     private List<Message> messages;
 
     @OneToMany(mappedBy = "recruteur")
+    @JsonIgnore
     private List<Notation> notations;
 
     @OneToMany(mappedBy = "recruteur")
+    @JsonIgnore
     private Set<Paiement> paiements;
 
     @OneToMany(mappedBy = "recruteur")
+    @JsonIgnore
     private Set<Mission> missions;
     @OneToMany(mappedBy = "recruteurValidateur")
+    @JsonIgnore
     private List<Candidature> candidaturesValidees;
 
     // Validation retirée pour autoriser l'inscription minimale.

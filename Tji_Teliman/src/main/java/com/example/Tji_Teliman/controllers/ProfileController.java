@@ -2,6 +2,7 @@ package com.example.Tji_Teliman.controllers;
 
 import com.example.Tji_Teliman.services.ProfileService;
 import com.example.Tji_Teliman.dto.JeunePrestateurProfileDTO;
+import com.example.Tji_Teliman.dto.UserProfileDTO;
 import java.util.List;
 import java.io.IOException;
 import java.util.Date;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.GetMapping;  
 
 @RestController
 @RequestMapping("/api/profiles")
@@ -39,6 +41,16 @@ public class ProfileController {
         }
         JeunePrestateurProfileDTO dto = profileService.toProfileDTO(jeune);
         return ResponseEntity.ok(dto);
+    }
+
+    @GetMapping("/users/{id}")
+    public ResponseEntity<?> getUserProfile(@PathVariable Long id) {
+        try {
+            UserProfileDTO dto = profileService.getUserProfile(id);
+            return ResponseEntity.ok(dto);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        }
     }
 
     @PostMapping("/recruteurs/particulier/{id}")

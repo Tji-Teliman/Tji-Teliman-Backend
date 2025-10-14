@@ -1,8 +1,10 @@
 package com.example.Tji_Teliman.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.Date;
 import java.util.List;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class JeunePrestateurProfileDTO {
     private Long id;
     private String nom;
@@ -19,9 +21,7 @@ public class JeunePrestateurProfileDTO {
     private String carteIdentite;
 
     private List<String> competences; // only names
-    private List<MessageDTO> messages;
-    private List<NotationDTO> notations;
-    private List<CandidatureDTO> candidatures;
+    private List<NotationDTO> notations; // kept for later use
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -49,12 +49,8 @@ public class JeunePrestateurProfileDTO {
     public void setCarteIdentite(String carteIdentite) { this.carteIdentite = carteIdentite; }
     public List<String> getCompetences() { return competences; }
     public void setCompetences(List<String> competences) { this.competences = competences; }
-    public List<MessageDTO> getMessages() { return messages; }
-    public void setMessages(List<MessageDTO> messages) { this.messages = messages; }
     public List<NotationDTO> getNotations() { return notations; }
     public void setNotations(List<NotationDTO> notations) { this.notations = notations; }
-    public List<CandidatureDTO> getCandidatures() { return candidatures; }
-    public void setCandidatures(List<CandidatureDTO> candidatures) { this.candidatures = candidatures; }
 }
 
 

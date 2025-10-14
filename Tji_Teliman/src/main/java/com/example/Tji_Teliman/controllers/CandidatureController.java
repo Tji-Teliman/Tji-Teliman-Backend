@@ -48,9 +48,9 @@ public class CandidatureController {
         return ResponseEntity.ok(candidatureService.getCandidaturesByMission(missionId));
     }
 
-    @GetMapping("/{candidatureId}/motivations")
-    public ResponseEntity<List<MotivationDTO>> getMotivationsByCandidature(@PathVariable Long candidatureId) {
-        return ResponseEntity.ok(candidatureService.getMotivationsByCandidature(candidatureId));
+    @GetMapping("/mission/{missionId}/motivations")
+    public ResponseEntity<List<MotivationDTO>> getMotivationsByMission(@PathVariable Long missionId) {
+        return ResponseEntity.ok(candidatureService.getMotivationsByMission(missionId));
     }
 
     @PutMapping("/{candidatureId}/valider")
