@@ -30,14 +30,21 @@ public class ProfileController {
     public ResponseEntity<?> createOrUpdateJeune(
         @PathVariable Long id,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date dateNaissance,
-        @RequestParam(required = false) String localisation,
         @RequestParam(required = false) MultipartFile photo,
         @RequestParam(required = false) MultipartFile carteIdentite,
-        @RequestParam(required = false) List<String> competences
+        @RequestParam(required = false) List<String> competences,
+        @RequestParam(required = false) Double latitude,
+        @RequestParam(required = false) Double longitude,
+        @RequestParam(required = false) String adresse,
+        @RequestParam(required = false) String placeId
     ) throws IOException {
-        var jeune = profileService.updateJeune(id, dateNaissance, localisation, photo, carteIdentite);
+        var jeune = profileService.updateJeune(id, dateNaissance, photo, carteIdentite);
         if (competences != null && !competences.isEmpty()) {
             jeune = profileService.setCompetencesJeune(id, new java.util.ArrayList<>(competences));
+        }
+        // Mettre à jour la géolocalisation si fournie
+        if (latitude != null || longitude != null || adresse != null || placeId != null) {
+            jeune = profileService.updateJeuneLocation(id, latitude, longitude, adresse, placeId);
         }
         JeunePrestateurProfileDTO dto = profileService.toProfileDTO(jeune);
         return ResponseEntity.ok(dto);
@@ -58,10 +65,17 @@ public class ProfileController {
         @PathVariable Long id,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date dateNaissance,
         @RequestParam(required = false) String profession,
+        @RequestParam(required = false) MultipartFile photo,
+        @RequestParam(required = false) Double latitude,
+        @RequestParam(required = false) Double longitude,
         @RequestParam(required = false) String adresse,
-        @RequestParam(required = false) MultipartFile photo
+        @RequestParam(required = false) String placeId
     ) throws IOException {
-        var r = profileService.updateRecruteurParticulier(id, dateNaissance, profession, adresse, photo);
+        var r = profileService.updateRecruteurParticulier(id, dateNaissance, profession, photo);
+        // Mettre à jour la géolocalisation si fournie
+        if (latitude != null || longitude != null || adresse != null || placeId != null) {
+            r = profileService.updateRecruteurLocation(id, latitude, longitude, adresse, placeId);
+        }
         return ResponseEntity.ok(r);
     }
 
@@ -72,9 +86,17 @@ public class ProfileController {
         @RequestParam(required = false) String secteurActivite,
         @RequestParam(required = false) String emailEntreprise,
         @RequestParam(required = false) String siteWeb,
-        @RequestParam(required = false) MultipartFile photo
+        @RequestParam(required = false) MultipartFile photo,
+        @RequestParam(required = false) Double latitude,
+        @RequestParam(required = false) Double longitude,
+        @RequestParam(required = false) String adresse,
+        @RequestParam(required = false) String placeId
     ) throws IOException {
         var r = profileService.updateRecruteurEntreprise(id, nomEntreprise, secteurActivite, emailEntreprise, siteWeb, photo);
+        // Mettre à jour la géolocalisation si fournie
+        if (latitude != null || longitude != null || adresse != null || placeId != null) {
+            r = profileService.updateRecruteurLocation(id, latitude, longitude, adresse, placeId);
+        }
         return ResponseEntity.ok(r);
     }
 }

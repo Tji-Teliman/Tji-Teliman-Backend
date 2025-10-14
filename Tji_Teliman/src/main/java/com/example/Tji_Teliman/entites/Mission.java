@@ -59,7 +59,11 @@ public class Mission {
     @Transient
     private Long dureHeures; // Durée estimée en heures (en fonction des heures/jour)
 
-    private String localisation;
+    // Coordonnées précises (Google Maps)
+    private Double latitude;
+    private Double longitude;
+    private String adresse;
+    private String placeId;
 
     private Double remuneration;
 

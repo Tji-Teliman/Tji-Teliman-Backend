@@ -32,11 +32,14 @@ public class MissionController {
         String exigence,
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date dateDebut,
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date dateFin,
-        String localisation,
         Double remuneration,
         String categorieNom,
         String heureDebut,
-        String heureFin
+        String heureFin,
+        Double latitude,
+        Double longitude,
+        String adresse,
+        String placeId
     ) {}
 
     public record ApiResponse(boolean success, String message, Object data) {}
@@ -44,7 +47,7 @@ public class MissionController {
     @PostMapping("/recruteur/{recruteurId}")
     public ResponseEntity<?> create(@PathVariable Long recruteurId, @RequestBody CreateMissionRequest req) {
         try {
-            Mission m = missionService.create(recruteurId, req.titre(), req.description(), req.exigence(), req.dateDebut(), req.dateFin(), req.localisation(), req.remuneration(), req.categorieNom(), req.heureDebut(), req.heureFin());
+            Mission m = missionService.create(recruteurId, req.titre(), req.description(), req.exigence(), req.dateDebut(), req.dateFin(), req.remuneration(), req.categorieNom(), req.heureDebut(), req.heureFin(), req.latitude(), req.longitude(), req.adresse(), req.placeId());
             MissionDTO dto = missionService.toDTO(m);
             return ResponseEntity.ok(new ApiResponse(true, "Mission créée", dto));
         } catch (IllegalArgumentException ex) {
@@ -55,6 +58,11 @@ public class MissionController {
     @GetMapping("/all")
     public ResponseEntity<List<MissionDTO>> listAll() {
         return ResponseEntity.ok(missionService.listAll().stream().map(missionService::toDTO).toList());
+    }
+
+    @GetMapping("/en-attente")
+    public ResponseEntity<List<MissionDTO>> listEnAttente() {
+        return ResponseEntity.ok(missionService.listEnAttente().stream().map(missionService::toDTO).toList());
     }
 
     @GetMapping("/{id}")
@@ -83,7 +91,7 @@ public class MissionController {
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody CreateMissionRequest req) {
         try {
-            Mission m = missionService.update(id, req.titre(), req.description(), req.exigence(), req.dateDebut(), req.dateFin(), req.localisation(), req.remuneration(), req.categorieNom(), null, req.heureDebut(), req.heureFin());
+            Mission m = missionService.update(id, req.titre(), req.description(), req.exigence(), req.dateDebut(), req.dateFin(), req.remuneration(), req.categorieNom(), null, req.heureDebut(), req.heureFin(), req.latitude(), req.longitude(), req.adresse(), req.placeId());
             MissionDTO dto = missionService.toDTO(m);
             return ResponseEntity.ok(new ApiResponse(true, "Mission mise à jour", dto));
         } catch (IllegalArgumentException ex) {

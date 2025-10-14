@@ -97,6 +97,30 @@ public class CandidatureService {
                 .map(this::toCandidatureDTO)
                 .collect(Collectors.toList());
     }
+
+    @Transactional(readOnly = true)
+    public List<CandidatureDTO> getCandidaturesAcceptees() {
+        return candidatureRepository.findByStatut(StatutCandidature.ACCEPTEE).stream()
+                .map(this::toCandidatureDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<CandidatureDTO> getCandidaturesRefusees() {
+        return candidatureRepository.findByStatut(StatutCandidature.REFUSEE).stream()
+                .map(this::toCandidatureDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.Map<String, Long> getCountsAccepteesEtRefusees() {
+        long acceptees = candidatureRepository.countByStatut(StatutCandidature.ACCEPTEE);
+        long refusees = candidatureRepository.countByStatut(StatutCandidature.REFUSEE);
+        java.util.Map<String, Long> map = new java.util.HashMap<>();
+        map.put("acceptees", acceptees);
+        map.put("refusees", refusees);
+        return map;
+    }
     
     @Transactional(readOnly = true)
     public List<MotivationDTO> getMotivationsByCandidature(Long candidatureId) {

@@ -53,6 +53,30 @@ public class CandidatureController {
         return ResponseEntity.ok(candidatureService.getMotivationsByMission(missionId));
     }
 
+    @GetMapping("/acceptees")
+    public ResponseEntity<?> getCandidaturesAcceptees() {
+        List<CandidatureDTO> liste = candidatureService.getCandidaturesAcceptees();
+        var data = new java.util.HashMap<String, Object>();
+        data.put("nombre", liste.size());
+        data.put("candidatures", liste);
+        return ResponseEntity.ok(new ApiResponse(true, "Candidatures acceptées", data));
+    }
+
+    @GetMapping("/refusees")
+    public ResponseEntity<?> getCandidaturesRefusees() {
+        List<CandidatureDTO> liste = candidatureService.getCandidaturesRefusees();
+        var data = new java.util.HashMap<String, Object>();
+        data.put("nombre", liste.size());
+        data.put("candidatures", liste);
+        return ResponseEntity.ok(new ApiResponse(true, "Candidatures refusées", data));
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<?> getStatsCandidatures() {
+        var counts = candidatureService.getCountsAccepteesEtRefusees();
+        return ResponseEntity.ok(new ApiResponse(true, "Statistiques candidatures", counts));
+    }
+
     @PutMapping("/{candidatureId}/valider")
     public ResponseEntity<?> validerCandidature(
             @PathVariable Long candidatureId,
