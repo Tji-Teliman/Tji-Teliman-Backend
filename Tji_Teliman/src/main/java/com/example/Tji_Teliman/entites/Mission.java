@@ -108,12 +108,25 @@ public class Mission {
     
     @Transient
     public Long getDureHeures() {
-        Long jours = getDureJours();
-        if (jours == null) return null;
-        if (heureDebut != null && heureFin != null) {
-            long heuresParJour = java.time.Duration.between(heureDebut, heureFin).toHours();
-            return jours * Math.max(0, heuresParJour);
+        if (dateDebut == null || dateFin == null) {
+            return null;
         }
+        
+        // Si les heures de début et fin sont définies, calculer la durée en heures
+        if (heureDebut != null && heureFin != null) {
+            // Si c'est le même jour (dateDebut == dateFin)
+            if (dateDebut.equals(dateFin)) {
+                long heures = java.time.Duration.between(heureDebut, heureFin).toHours();
+                return Math.max(0, heures);
+            } else {
+                // Si c'est sur plusieurs jours, calculer la durée totale
+                Long jours = getDureJours();
+                if (jours == null) return null;
+                long heuresParJour = java.time.Duration.between(heureDebut, heureFin).toHours();
+                return jours * Math.max(0, heuresParJour);
+            }
+        }
+        
         return null;
     }
 }

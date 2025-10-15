@@ -24,9 +24,7 @@ public class MissionDTO {
     private Long dureHeures;
     private String categorieNom;
     private String categorieUrlPhoto;
-    private Long recruteurId;
-    private String recruteurNom;
-    private String recruteurPrenom;
+    private Long nombreCandidatures;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -66,12 +64,8 @@ public class MissionDTO {
     public void setCategorieNom(String categorieNom) { this.categorieNom = categorieNom; }
     public String getCategorieUrlPhoto() { return categorieUrlPhoto; }
     public void setCategorieUrlPhoto(String categorieUrlPhoto) { this.categorieUrlPhoto = categorieUrlPhoto; }
-    public Long getRecruteurId() { return recruteurId; }
-    public void setRecruteurId(Long recruteurId) { this.recruteurId = recruteurId; }
-    public String getRecruteurNom() { return recruteurNom; }
-    public void setRecruteurNom(String recruteurNom) { this.recruteurNom = recruteurNom; }
-    public String getRecruteurPrenom() { return recruteurPrenom; }
-    public void setRecruteurPrenom(String recruteurPrenom) { this.recruteurPrenom = recruteurPrenom; }
+    public Long getNombreCandidatures() { return nombreCandidatures; }
+    public void setNombreCandidatures(Long nombreCandidatures) { this.nombreCandidatures = nombreCandidatures; }
 }
 
 

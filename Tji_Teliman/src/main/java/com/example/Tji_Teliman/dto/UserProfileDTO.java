@@ -13,6 +13,7 @@ public class UserProfileDTO {
     private List<String> competences;
     private Long nombreMissionsAccomplies;
     private Long nombreMissionsPubliees;
+    private NotationMoyenneDTO notationMoyenne; // moyenne des notes reçues
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -34,6 +35,8 @@ public class UserProfileDTO {
     public void setNombreMissionsAccomplies(Long nombreMissionsAccomplies) { this.nombreMissionsAccomplies = nombreMissionsAccomplies; }
     public Long getNombreMissionsPubliees() { return nombreMissionsPubliees; }
     public void setNombreMissionsPubliees(Long nombreMissionsPubliees) { this.nombreMissionsPubliees = nombreMissionsPubliees; }
+    public NotationMoyenneDTO getNotationMoyenne() { return notationMoyenne; }
+    public void setNotationMoyenne(NotationMoyenneDTO notationMoyenne) { this.notationMoyenne = notationMoyenne; }
 }
 
 

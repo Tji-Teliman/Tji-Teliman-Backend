@@ -2,55 +2,40 @@ package com.example.Tji_Teliman.dto;
 
 import java.util.Date;
 
-public class NotationDTO {
+public class PaiementDTO {
     private Long id;
-    private Integer note;
-    private String commentaire;
-    private Date dateNotation;
-    private boolean initieParRecruteur;
-    
-    // Informations sur la candidature et mission
+    private Double montant;
+    private Date datePaiement;
+    private String statutPaiement;
     private Long candidatureId;
-    private Long missionId;
-    private String missionTitre;
-    
-    // Informations sur le recruteur
     private Long recruteurId;
     private String recruteurNom;
     private String recruteurPrenom;
-    
-    // Informations sur le jeune prestataire
     private Long jeunePrestateurId;
     private String jeunePrestateurNom;
     private String jeunePrestateurPrenom;
+    private Long missionId;
+    private String missionTitre;
+    private Double missionRemuneration;
 
     // Constructeurs
-    public NotationDTO() {}
+    public PaiementDTO() {}
 
     // Getters et Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    public Integer getNote() { return note; }
-    public void setNote(Integer note) { this.note = note; }
+    public Double getMontant() { return montant; }
+    public void setMontant(Double montant) { this.montant = montant; }
 
-    public String getCommentaire() { return commentaire; }
-    public void setCommentaire(String commentaire) { this.commentaire = commentaire; }
+    public Date getDatePaiement() { return datePaiement; }
+    public void setDatePaiement(Date datePaiement) { this.datePaiement = datePaiement; }
 
-    public Date getDateNotation() { return dateNotation; }
-    public void setDateNotation(Date dateNotation) { this.dateNotation = dateNotation; }
-
-    public boolean isInitieParRecruteur() { return initieParRecruteur; }
-    public void setInitieParRecruteur(boolean initieParRecruteur) { this.initieParRecruteur = initieParRecruteur; }
+    public String getStatutPaiement() { return statutPaiement; }
+    public void setStatutPaiement(String statutPaiement) { this.statutPaiement = statutPaiement; }
 
     public Long getCandidatureId() { return candidatureId; }
     public void setCandidatureId(Long candidatureId) { this.candidatureId = candidatureId; }
-
-    public Long getMissionId() { return missionId; }
-    public void setMissionId(Long missionId) { this.missionId = missionId; }
-
-    public String getMissionTitre() { return missionTitre; }
-    public void setMissionTitre(String missionTitre) { this.missionTitre = missionTitre; }
 
     public Long getRecruteurId() { return recruteurId; }
     public void setRecruteurId(Long recruteurId) { this.recruteurId = recruteurId; }
@@ -69,6 +54,13 @@ public class NotationDTO {
 
     public String getJeunePrestateurPrenom() { return jeunePrestateurPrenom; }
     public void setJeunePrestateurPrenom(String jeunePrestateurPrenom) { this.jeunePrestateurPrenom = jeunePrestateurPrenom; }
+
+    public Long getMissionId() { return missionId; }
+    public void setMissionId(Long missionId) { this.missionId = missionId; }
+
+    public String getMissionTitre() { return missionTitre; }
+    public void setMissionTitre(String missionTitre) { this.missionTitre = missionTitre; }
+
+    public Double getMissionRemuneration() { return missionRemuneration; }
+    public void setMissionRemuneration(Double missionRemuneration) { this.missionRemuneration = missionRemuneration; }
 }
-
-
