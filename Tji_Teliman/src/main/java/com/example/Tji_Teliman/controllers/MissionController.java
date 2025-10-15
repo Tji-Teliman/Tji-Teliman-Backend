@@ -2,6 +2,7 @@ package com.example.Tji_Teliman.controllers;
 
 import com.example.Tji_Teliman.entites.Mission;
 import com.example.Tji_Teliman.services.MissionService;
+import com.example.Tji_Teliman.services.GoogleMapsService;
 import com.example.Tji_Teliman.dto.MissionDTO;
 import java.util.Date;
 import java.util.List;
@@ -21,9 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class MissionController {
 
     private final MissionService missionService;
+    private final GoogleMapsService googleMapsService;
 
-    public MissionController(MissionService missionService) {
+    public MissionController(MissionService missionService, GoogleMapsService googleMapsService) {
         this.missionService = missionService;
+        this.googleMapsService = googleMapsService;
     }
 
     public record CreateMissionRequest(
@@ -114,4 +117,24 @@ public class MissionController {
         missionService.verifierMissionsTerminees();
         return ResponseEntity.ok(new ApiResponse(true, "Vérification des missions terminées effectuée", null));
     }
+
+    /**
+     * Endpoint pour le géocodage inverse : convertir lat/lng en placeId et adresse
+     * Utile quand le frontend a seulement les coordonnées du clic sur la carte
+     */
+    @PostMapping("/reverse-geocode")
+    public ResponseEntity<?> reverseGeocode(@RequestBody ReverseGeocodeRequest req) {
+        try {
+            var result = googleMapsService.reverseGeocode(req.latitude(), req.longitude());
+            if (result != null) {
+                return ResponseEntity.ok(new ApiResponse(true, "Géocodage inverse réussi", result));
+            } else {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Impossible de géocoder cette position", null));
+            }
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, "Erreur lors du géocodage inverse: " + ex.getMessage(), null));
+        }
+    }
+
+    public record ReverseGeocodeRequest(Double latitude, Double longitude) {}
 }

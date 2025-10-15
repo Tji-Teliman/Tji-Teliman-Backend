@@ -39,7 +39,7 @@ public class Notification {
     private String contenu;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false,length = 50)
     private TypeNotification type;
 
     @Temporal(TemporalType.TIMESTAMP)

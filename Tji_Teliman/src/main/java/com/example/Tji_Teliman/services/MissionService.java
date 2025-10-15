@@ -40,14 +40,21 @@ public class MissionService {
         m.setExigence(exigence);
         m.setDateDebut(dateDebut);
         m.setDateFin(dateFin);
-        // Si placeId fourni et clé présente, enrichir via Google (écrase les valeurs fournies)
+        // Gestion de la géolocalisation : deux cas possibles
         if (placeId != null && !placeId.isBlank()) {
+            // Cas 1: placeId fourni -> enrichir avec les détails Google Maps
             var details = googleMapsService.fetchPlaceDetails(placeId);
             if (details != null) {
-                // Toujours utiliser les valeurs de Google Maps si placeId fourni
                 latitude = details.lat();
                 longitude = details.lng();
                 adresse = details.formattedAddress();
+            }
+        } else if (latitude != null && longitude != null) {
+            // Cas 2: seulement lat/lng fournis -> géocodage inverse pour obtenir placeId et adresse
+            var reverseResult = googleMapsService.reverseGeocode(latitude, longitude);
+            if (reverseResult != null) {
+                placeId = reverseResult.placeId();
+                adresse = reverseResult.formattedAddress();
             }
         }
         m.setLatitude(latitude);
@@ -87,14 +94,23 @@ public class MissionService {
         if (exigence != null && !exigence.trim().isEmpty()) m.setExigence(exigence);
         if (dateDebut != null) m.setDateDebut(dateDebut);
         if (dateFin != null) m.setDateFin(dateFin);
+        // Gestion de la géolocalisation : deux cas possibles
         if (placeId != null && !placeId.trim().isEmpty()) {
+            // Cas 1: placeId fourni -> enrichir avec les détails Google Maps
             m.setPlaceId(placeId);
             var details = googleMapsService.fetchPlaceDetails(placeId);
             if (details != null) {
-                // Toujours utiliser les valeurs de Google Maps si placeId fourni
                 latitude = details.lat();
                 longitude = details.lng();
                 adresse = details.formattedAddress();
+            }
+        } else if (latitude != null && longitude != null) {
+            // Cas 2: seulement lat/lng fournis -> géocodage inverse pour obtenir placeId et adresse
+            var reverseResult = googleMapsService.reverseGeocode(latitude, longitude);
+            if (reverseResult != null) {
+                placeId = reverseResult.placeId();
+                adresse = reverseResult.formattedAddress();
+                m.setPlaceId(placeId);
             }
         }
         if (latitude != null) m.setLatitude(latitude);

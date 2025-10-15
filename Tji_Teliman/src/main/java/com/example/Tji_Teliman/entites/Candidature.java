@@ -63,8 +63,8 @@ public class Candidature {
     @OneToOne(mappedBy = "candidature", orphanRemoval = true, cascade = jakarta.persistence.CascadeType.ALL)
     private Paiement paiement;
 
-    @OneToOne(mappedBy = "candidature", orphanRemoval = true, cascade = jakarta.persistence.CascadeType.ALL)
-    private Notation notation;
+    @OneToMany(mappedBy = "candidature", orphanRemoval = true, cascade = jakarta.persistence.CascadeType.ALL)
+    private Set<Notation> notations;
 
     @PrePersist
     private void onCreate() {

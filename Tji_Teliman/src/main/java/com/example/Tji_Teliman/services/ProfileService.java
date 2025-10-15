@@ -13,8 +13,11 @@ import com.example.Tji_Teliman.dto.UserProfileDTO;
 import com.example.Tji_Teliman.dto.MessageDTO;
 import com.example.Tji_Teliman.dto.NotationDTO;
 import com.example.Tji_Teliman.dto.CandidatureDTO;
+import com.example.Tji_Teliman.dto.NotationMoyenneDTO;
+import com.example.Tji_Teliman.entites.Notation;
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,14 +32,16 @@ public class ProfileService {
     private final CompetenceRepository competenceRepository;
     private final CandidatureService candidatureService;
     private final GoogleMapsService googleMapsService;
+    private final NotationService notationService;
 
-    public ProfileService(JeunePrestateurRepository jeuneRepo, RecruteurRepository recruteurRepo, FileStorageService storageService, CompetenceRepository competenceRepository, CandidatureService candidatureService, GoogleMapsService googleMapsService) {
+    public ProfileService(JeunePrestateurRepository jeuneRepo, RecruteurRepository recruteurRepo, FileStorageService storageService, CompetenceRepository competenceRepository, CandidatureService candidatureService, GoogleMapsService googleMapsService, NotationService notationService) {
         this.jeuneRepo = jeuneRepo;
         this.recruteurRepo = recruteurRepo;
         this.storageService = storageService;
         this.competenceRepository = competenceRepository;
         this.candidatureService = candidatureService;
         this.googleMapsService = googleMapsService;
+        this.notationService = notationService;
     }
 
     @Transactional
@@ -58,16 +63,25 @@ public class ProfileService {
     @Transactional
     public JeunePrestateur updateJeuneLocation(Long id, Double latitude, Double longitude, String adresse, String placeId) {
         JeunePrestateur j = jeuneRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("JeunePrestateur introuvable"));
-        // Si placeId fourni et clé présente, enrichir via Google (écrase les valeurs fournies)
+        
+        // Gestion de la géolocalisation : deux cas possibles
         if (placeId != null && !placeId.isBlank()) {
+            // Cas 1: placeId fourni -> enrichir avec les détails Google Maps
             var details = googleMapsService.fetchPlaceDetails(placeId);
             if (details != null) {
-                // Toujours utiliser les valeurs de Google Maps si placeId fourni
                 latitude = details.lat();
                 longitude = details.lng();
                 adresse = details.formattedAddress();
             }
+        } else if (latitude != null && longitude != null) {
+            // Cas 2: seulement lat/lng fournis -> géocodage inverse pour obtenir placeId et adresse
+            var reverseResult = googleMapsService.reverseGeocode(latitude, longitude);
+            if (reverseResult != null) {
+                placeId = reverseResult.placeId();
+                adresse = reverseResult.formattedAddress();
+            }
         }
+        
         j.setLatitude(latitude);
         j.setLongitude(longitude);
         j.setAdresse(adresse);
@@ -78,16 +92,25 @@ public class ProfileService {
     @Transactional
     public Recruteur updateRecruteurLocation(Long id, Double latitude, Double longitude, String adresse, String placeId) {
         Recruteur r = recruteurRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("Recruteur introuvable"));
-        // Si placeId fourni et clé présente, enrichir via Google (écrase les valeurs fournies)
+        
+        // Gestion de la géolocalisation : deux cas possibles
         if (placeId != null && !placeId.isBlank()) {
+            // Cas 1: placeId fourni -> enrichir avec les détails Google Maps
             var details = googleMapsService.fetchPlaceDetails(placeId);
             if (details != null) {
-                // Toujours utiliser les valeurs de Google Maps si placeId fourni
                 latitude = details.lat();
                 longitude = details.lng();
                 adresse = details.formattedAddress();
             }
+        } else if (latitude != null && longitude != null) {
+            // Cas 2: seulement lat/lng fournis -> géocodage inverse pour obtenir placeId et adresse
+            var reverseResult = googleMapsService.reverseGeocode(latitude, longitude);
+            if (reverseResult != null) {
+                placeId = reverseResult.placeId();
+                adresse = reverseResult.formattedAddress();
+            }
         }
+        
         r.setLatitude(latitude);
         r.setLongitude(longitude);
         r.setAdresse(adresse);
@@ -145,16 +168,12 @@ public class ProfileService {
                 .map(jc -> jc.getCompetence().getNom())
                 .collect(Collectors.toList()));
         }
-        // Inclure seulement les notations si présentes
-        if (j.getNotations() != null) {
-            dto.setNotations(j.getNotations().stream().map(n -> {
-                NotationDTO nd = new NotationDTO();
-                nd.setId(n.getId());
-                nd.setNote(n.getNote());
-                nd.setCommentaire(n.getCommentaire());
-                nd.setDateNotation(n.getDateNotation());
-                return nd;
-            }).toList());
+        // Calculer la moyenne des notations reçues par le jeune
+        Double moyenneNotes = notationService.getMoyenneNotesJeune(j.getId());
+        if (moyenneNotes != null) {
+            List<Notation> notationsRecues = notationService.getNotationsRecuesParJeune(j.getId());
+            NotationMoyenneDTO notationMoyenne = new NotationMoyenneDTO(moyenneNotes, notationsRecues.size());
+            dto.setNotationMoyenne(notationMoyenne);
         }
         return dto;
     }
@@ -180,6 +199,15 @@ public class ProfileService {
                     .toList());
             }
             dto.setNombreMissionsAccomplies(candidatureService.getNombreMissionsAccompliesByJeune(userId));
+            
+            // Calculer la moyenne des notations reçues par le jeune
+            Double moyenneNotes = notationService.getMoyenneNotesJeune(userId);
+            if (moyenneNotes != null) {
+                List<Notation> notationsRecues = notationService.getNotationsRecuesParJeune(userId);
+                NotationMoyenneDTO notationMoyenne = new NotationMoyenneDTO(moyenneNotes, notationsRecues.size());
+                dto.setNotationMoyenne(notationMoyenne);
+            }
+            
             return dto;
         }
         // Essayer Recruteur
@@ -198,6 +226,15 @@ public class ProfileService {
             dto.setCompetences(null);
             dto.setNombreMissionsPubliees(r.getMissions() == null ? 0L : (long) r.getMissions().size());
             dto.setNombreMissionsAccomplies(null);
+            
+            // Calculer la moyenne des notations reçues par le recruteur
+            Double moyenneNotes = notationService.getMoyenneNotesRecruteur(userId);
+            if (moyenneNotes != null) {
+                List<Notation> notationsRecues = notationService.getNotationsRecuesParRecruteur(userId);
+                NotationMoyenneDTO notationMoyenne = new NotationMoyenneDTO(moyenneNotes, notationsRecues.size());
+                dto.setNotationMoyenne(notationMoyenne);
+            }
+            
             return dto;
         }
         throw new IllegalArgumentException("Utilisateur introuvable");

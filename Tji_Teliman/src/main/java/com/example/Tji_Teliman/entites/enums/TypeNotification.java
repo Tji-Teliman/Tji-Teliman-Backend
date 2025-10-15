@@ -3,7 +3,8 @@ package com.example.Tji_Teliman.entites.enums;
 public enum TypeNotification {
   CANDIDATURE_ACCEPTEE,
   MISSION_TERMINEE,
-  PAIEMENT_EFFECTUE
+  PAIEMENT_EFFECTUE,
+  DEMANDE_NOTATION_RECRUTEUR,
+  NOTATION_RECUE,
+  DEMANDE_NOTATION_JEUNE
 }
-
-
