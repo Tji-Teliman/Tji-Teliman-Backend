@@ -112,6 +112,51 @@ public class UtilisateurService {
         return new LoginResponse(new AuthResponse(user.getId(), user.getNom(), user.getPrenom(), user.getTelephone(), user.getEmail(), user.getRole().name(), user.getGenre().name()), token);
     }
 
+    @Transactional
+    public void changePassword(Long userId, String motDePasseActuel, String nouveauMotDePasse, String confirmationMotDePasse) {
+        // Validation des paramètres
+        if (isBlank(motDePasseActuel)) {
+            throw new IllegalArgumentException("Le mot de passe actuel est requis");
+        }
+        if (isBlank(nouveauMotDePasse)) {
+            throw new IllegalArgumentException("Le nouveau mot de passe est requis");
+        }
+        if (isBlank(confirmationMotDePasse)) {
+            throw new IllegalArgumentException("La confirmation du mot de passe est requise");
+        }
+
+        // Vérifier que le nouveau mot de passe et la confirmation correspondent
+        if (!nouveauMotDePasse.equals(confirmationMotDePasse)) {
+            throw new IllegalArgumentException("Le nouveau mot de passe et la confirmation ne correspondent pas");
+        }
+
+        // Vérifier que le nouveau mot de passe est différent de l'ancien
+        if (motDePasseActuel.equals(nouveauMotDePasse)) {
+            throw new IllegalArgumentException("Le nouveau mot de passe doit être différent de l'ancien");
+        }
+
+        // Validation de la force du mot de passe (minimum 6 caractères)
+        if (nouveauMotDePasse.length() < 6) {
+            throw new IllegalArgumentException("Le nouveau mot de passe doit contenir au moins 6 caractères");
+        }
+
+        // Récupérer l'utilisateur
+        var userOpt = utilisateurRepository.findById(userId);
+        if (userOpt.isEmpty()) {
+            throw new IllegalArgumentException("Utilisateur introuvable");
+        }
+        var user = userOpt.get();
+
+        // Vérifier que le mot de passe actuel est correct
+        if (!passwordEncoder.matches(motDePasseActuel, user.getMotDePasse())) {
+            throw new IllegalArgumentException("Le mot de passe actuel est incorrect");
+        }
+
+        // Mettre à jour le mot de passe
+        user.setMotDePasse(passwordEncoder.encode(nouveauMotDePasse));
+        utilisateurRepository.save(user);
+    }
+
     public record AuthResponse(Long id, String nom, String prenom, String telephone, String email, String role, String genre) {}
     public record LoginResponse(AuthResponse user, String token) {}
 }

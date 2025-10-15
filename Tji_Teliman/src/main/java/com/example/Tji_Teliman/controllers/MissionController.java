@@ -77,7 +77,7 @@ public class MissionController {
         }
     }
 
-    @GetMapping
+    @GetMapping("")
     public ResponseEntity<List<MissionDTO>> listByRecruteur(@PathVariable Long recruteurId) {
         return ResponseEntity.ok(missionService.listByRecruteur(recruteurId).stream().map(missionService::toDTO).toList());
     }
