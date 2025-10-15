@@ -26,7 +26,11 @@ public class JeunePrestateur extends Utilisateur {
     @Temporal(TemporalType.DATE)
     private Date dateNaissance;
 
-    private String localisation;
+    // Coordonnées précises (Google Maps)
+    private Double latitude;
+    private Double longitude;
+    private String adresse;
+    private String placeId;
 
     @OneToMany(mappedBy = "jeunePrestateur", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<JeuneCompetence> competences;

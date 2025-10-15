@@ -10,7 +10,11 @@ public class MissionDTO {
     private Date dateDebut;
     private Date dateFin;
     // removed legacy 'dure'
-    private String localisation;
+    // localisation supprimée: on utilise lat/lng/adresse/placeId
+    private Double latitude;
+    private Double longitude;
+    private String adresse;
+    private String placeId;
     private Double remuneration;
     private Date datePublication;
     private String statut;
@@ -44,8 +48,14 @@ public class MissionDTO {
     public void setDureJours(Long dureJours) { this.dureJours = dureJours; }
     public Long getDureHeures() { return dureHeures; }
     public void setDureHeures(Long dureHeures) { this.dureHeures = dureHeures; }
-    public String getLocalisation() { return localisation; }
-    public void setLocalisation(String localisation) { this.localisation = localisation; }
+    public Double getLatitude() { return latitude; }
+    public void setLatitude(Double latitude) { this.latitude = latitude; }
+    public Double getLongitude() { return longitude; }
+    public void setLongitude(Double longitude) { this.longitude = longitude; }
+    public String getAdresse() { return adresse; }
+    public void setAdresse(String adresse) { this.adresse = adresse; }
+    public String getPlaceId() { return placeId; }
+    public void setPlaceId(String placeId) { this.placeId = placeId; }
     public Double getRemuneration() { return remuneration; }
     public void setRemuneration(Double remuneration) { this.remuneration = remuneration; }
     public Date getDatePublication() { return datePublication; }
