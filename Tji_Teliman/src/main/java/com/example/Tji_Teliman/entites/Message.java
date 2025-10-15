@@ -2,6 +2,8 @@ package com.example.Tji_Teliman.entites;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -26,6 +28,11 @@ import lombok.Setter;
 @Table(name = "message")
 public class Message {
 
+    public enum MessageType {
+        TEXT,       // Message texte
+        VOICE       // Message vocal
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -42,8 +49,21 @@ public class Message {
     @Column(nullable = false)
     private boolean envoyeParRecruteur;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = true)
     private String contenu;
+
+    //  le type de message
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private MessageType typeMessage = MessageType.TEXT;
+
+    //  pour stocker l'URL du fichier vocal
+    @Column(name = "voice_file_url")
+    private String voiceFileUrl;
+
+    //  pour la durée du message vocal (en secondes)
+    @Column(name = "voice_duration")
+    private Integer voiceDuration;
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date dateMessage;
@@ -52,6 +72,11 @@ public class Message {
     private void onCreate() {
         if (dateMessage == null) {
             dateMessage = new Date();
+        }
+
+        // Validation de cohérence selon le type de message
+        if (typeMessage == MessageType.VOICE && voiceFileUrl == null) {
+            throw new IllegalStateException("Un message vocal doit avoir une URL de fichier");
         }
     }
 
@@ -63,5 +88,17 @@ public class Message {
     @Transient
     public Long getIdDestinataire() {
         return envoyeParRecruteur ? jeunePrestateur.getId() : recruteur.getId();
+    }
+
+    // Méthode utilitaire pour vérifier si c'est un message vocal
+    @Transient
+    public boolean isVoiceMessage() {
+        return MessageType.VOICE.equals(typeMessage);
+    }
+
+    // Méthode utilitaire pour vérifier si c'est un message texte
+    @Transient
+    public boolean isTextMessage() {
+        return MessageType.TEXT.equals(typeMessage);
     }
 }

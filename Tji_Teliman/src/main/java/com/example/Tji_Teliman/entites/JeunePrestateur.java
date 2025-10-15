@@ -1,5 +1,6 @@
 package com.example.Tji_Teliman.entites;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.CascadeType;
@@ -35,6 +36,7 @@ public class JeunePrestateur extends Utilisateur {
     private String carteIdentite;
 
     @OneToMany(mappedBy = "jeunePrestateur")
+    @JsonIgnore
     private List<Message> messages;
 
     @OneToMany(mappedBy = "jeunePrestateur")
