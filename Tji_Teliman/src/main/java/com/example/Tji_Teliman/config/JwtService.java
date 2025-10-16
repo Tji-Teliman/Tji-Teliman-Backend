@@ -2,6 +2,7 @@ package com.example.Tji_Teliman.config;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.security.Keys;
 import java.security.Key;
 import java.util.Date;
@@ -34,6 +35,20 @@ public class JwtService {
             .setExpiration(exp)
             .signWith(key, SignatureAlgorithm.HS256)
             .compact();
+    }
+
+    public Long parseUserId(String token) {
+        try {
+            var claims = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+            String sub = claims.getSubject();
+            return sub == null ? null : Long.valueOf(sub);
+        } catch (JwtException | IllegalArgumentException ex) {
+            return null;
+        }
     }
 }
 
