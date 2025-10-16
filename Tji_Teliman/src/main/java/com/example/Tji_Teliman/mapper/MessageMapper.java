@@ -4,10 +4,6 @@ import com.example.Tji_Teliman.dto.MessageDTO;
 import com.example.Tji_Teliman.entites.Message;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
-import java.util.Date;
-import java.time.ZoneId;
-
 @Component
 public class MessageMapper {
 
@@ -15,29 +11,37 @@ public class MessageMapper {
         MessageDTO dto = new MessageDTO();
         dto.setId(message.getId());
         dto.setContenu(message.getContenu());
-
-        // Conversion Date vers LocalDate
-        if (message.getDateMessage() != null) {
-            LocalDate localDate = message.getDateMessage().toInstant()
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
-            dto.setDateMessage(localDate);
-        }
-
-        dto.setEnvoyeParRecruteur(message.isEnvoyeParRecruteur());
+        dto.setDateMessage(message.getDateMessage());
         dto.setTypeMessage(message.getTypeMessage().name());
         dto.setVoiceFileUrl(message.getVoiceFileUrl());
         dto.setVoiceDuration(message.getVoiceDuration());
 
-        // Déterminer idExpediteur et idDestinataire
+        // Informations sur l'expéditeur
         if (message.isEnvoyeParRecruteur()) {
-            dto.setIdExpediteur(message.getRecruteur().getId());
-            dto.setIdDestinataire(message.getJeunePrestateur().getId());
+            dto.setExpediteurNom(message.getRecruteur().getNom());
+            dto.setExpediteurPrenom(message.getRecruteur().getPrenom());
+            dto.setExpediteurPhoto(convertToRelativePath(message.getRecruteur().getUrlPhoto()));
         } else {
-            dto.setIdExpediteur(message.getJeunePrestateur().getId());
-            dto.setIdDestinataire(message.getRecruteur().getId());
+            dto.setExpediteurNom(message.getJeunePrestateur().getNom());
+            dto.setExpediteurPrenom(message.getJeunePrestateur().getPrenom());
+            dto.setExpediteurPhoto(convertToRelativePath(message.getJeunePrestateur().getUrlPhoto()));
         }
 
         return dto;
+    }
+
+    // Convertir le chemin absolu en chemin relatif
+    private String convertToRelativePath(String absolutePath) {
+        if (absolutePath == null) return null;
+        
+        // Remplacer les chemins absolus Windows par des chemins relatifs
+        if (absolutePath.contains("uploads\\")) {
+            return absolutePath.replaceAll(".*uploads\\\\", "/uploads/").replace("\\", "/");
+        }
+        if (absolutePath.contains("uploads/")) {
+            return absolutePath.replaceAll(".*uploads/", "/uploads/");
+        }
+        
+        return absolutePath;
     }
 }

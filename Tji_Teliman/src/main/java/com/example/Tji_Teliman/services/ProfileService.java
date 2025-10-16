@@ -10,9 +10,6 @@ import com.example.Tji_Teliman.repository.RecruteurRepository;
 import com.example.Tji_Teliman.repository.CompetenceRepository;
 import com.example.Tji_Teliman.dto.JeunePrestateurProfileDTO;
 import com.example.Tji_Teliman.dto.UserProfileDTO;
-import com.example.Tji_Teliman.dto.MessageDTO;
-import com.example.Tji_Teliman.dto.NotationDTO;
-import com.example.Tji_Teliman.dto.CandidatureDTO;
 import com.example.Tji_Teliman.dto.NotationMoyenneDTO;
 import com.example.Tji_Teliman.entites.Notation;
 import java.io.IOException;
@@ -270,6 +267,192 @@ public class ProfileService {
             String path = storageService.store(photo, "recruteurs");
             r.setUrlPhoto(path);
         }
+        return recruteurRepo.save(r);
+    }
+
+    /**
+     * Mettre à jour un recruteur particulier en définissant le type si nécessaire
+     */
+    @Transactional
+    public Recruteur updateRecruteurParticulierWithType(Long id, Date dateNaissance, String profession, MultipartFile photo) throws IOException {
+        Recruteur r = recruteurRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("Recruteur introuvable"));
+        
+        // Définir le type si ce n'est pas déjà fait
+        if (r.getTypeRecruteur() == null) {
+            r.setTypeRecruteur(TypeRecruteur.PARTICULIER);
+        }
+        
+        if (dateNaissance != null) r.setDateNaissance(dateNaissance);
+        if (profession != null && !profession.trim().isEmpty()) r.setProfession(profession);
+        if (photo != null && !photo.isEmpty()) {
+            String path = storageService.store(photo, "recruteurs");
+            r.setUrlPhoto(path);
+        }
+        return recruteurRepo.save(r);
+    }
+
+    /**
+     * Mettre à jour un recruteur entreprise en définissant le type si nécessaire
+     */
+    @Transactional
+    public Recruteur updateRecruteurEntrepriseWithType(Long id, String nomEntreprise, String secteurActivite, String emailEntreprise, String siteWeb, MultipartFile photo) throws IOException {
+        Recruteur r = recruteurRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("Recruteur introuvable"));
+        
+        // Définir le type si ce n'est pas déjà fait
+        if (r.getTypeRecruteur() == null) {
+            r.setTypeRecruteur(TypeRecruteur.ENTREPRISE);
+        }
+        
+        System.out.println("DEBUG Service - Valeurs reçues:");
+        System.out.println("nomEntreprise: " + nomEntreprise);
+        System.out.println("secteurActivite: " + secteurActivite);
+        System.out.println("emailEntreprise: " + emailEntreprise);
+        System.out.println("siteWeb: " + siteWeb);
+        
+        if (nomEntreprise != null && !nomEntreprise.trim().isEmpty()) {
+            r.setNomEntreprise(nomEntreprise);
+            System.out.println("DEBUG - nomEntreprise défini: " + nomEntreprise);
+        }
+        if (secteurActivite != null && !secteurActivite.trim().isEmpty()) {
+            r.setSecteurActivite(secteurActivite);
+            System.out.println("DEBUG - secteurActivite défini: " + secteurActivite);
+        }
+        if (emailEntreprise != null && !emailEntreprise.trim().isEmpty()) {
+            r.setEmailEntreprise(emailEntreprise);
+            System.out.println("DEBUG - emailEntreprise défini: " + emailEntreprise);
+        }
+        if (siteWeb != null && !siteWeb.trim().isEmpty()) {
+            r.setSiteWeb(siteWeb);
+            System.out.println("DEBUG - siteWeb défini: " + siteWeb);
+        }
+        if (photo != null && !photo.isEmpty()) {
+            String path = storageService.store(photo, "recruteurs");
+            r.setUrlPhoto(path);
+        }
+        return recruteurRepo.save(r);
+    }
+
+    /**
+     * Mettre à jour un recruteur entreprise avec géolocalisation en une seule opération
+     */
+    @Transactional
+    public Recruteur updateRecruteurEntrepriseWithTypeAndLocation(Long id, String nomEntreprise, String secteurActivite, String emailEntreprise, String siteWeb, MultipartFile photo, MultipartFile carteIdentite, Double latitude, Double longitude, String adresse, String placeId) throws IOException {
+        Recruteur r = recruteurRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("Recruteur introuvable"));
+        
+        // Définir le type si ce n'est pas déjà fait
+        if (r.getTypeRecruteur() == null) {
+            r.setTypeRecruteur(TypeRecruteur.ENTREPRISE);
+        }
+        
+        System.out.println("DEBUG Service - Valeurs reçues:");
+        System.out.println("nomEntreprise: " + nomEntreprise);
+        System.out.println("secteurActivite: " + secteurActivite);
+        System.out.println("emailEntreprise: " + emailEntreprise);
+        System.out.println("siteWeb: " + siteWeb);
+        
+        if (nomEntreprise != null && !nomEntreprise.trim().isEmpty()) {
+            r.setNomEntreprise(nomEntreprise);
+            System.out.println("DEBUG - nomEntreprise défini: " + nomEntreprise);
+        }
+        if (secteurActivite != null && !secteurActivite.trim().isEmpty()) {
+            r.setSecteurActivite(secteurActivite);
+            System.out.println("DEBUG - secteurActivite défini: " + secteurActivite);
+        }
+        if (emailEntreprise != null && !emailEntreprise.trim().isEmpty()) {
+            r.setEmailEntreprise(emailEntreprise);
+            System.out.println("DEBUG - emailEntreprise défini: " + emailEntreprise);
+        }
+        if (siteWeb != null && !siteWeb.trim().isEmpty()) {
+            r.setSiteWeb(siteWeb);
+            System.out.println("DEBUG - siteWeb défini: " + siteWeb);
+        }
+        if (photo != null && !photo.isEmpty()) {
+            String path = storageService.store(photo, "recruteurs");
+            r.setUrlPhoto(path);
+        }
+        if (carteIdentite != null && !carteIdentite.isEmpty()) {
+            String pathCI = storageService.store(carteIdentite, "recruteurs");
+            r.setCarteIdentite(pathCI);
+        }
+        
+        // Gestion de la géolocalisation
+        if (latitude != null || longitude != null || adresse != null || placeId != null) {
+            // Gestion de la géolocalisation : deux cas possibles
+            if (placeId != null && !placeId.isBlank()) {
+                // Cas 1: placeId fourni -> enrichir avec les détails Google Maps
+                var details = googleMapsService.fetchPlaceDetails(placeId);
+                if (details != null) {
+                    latitude = details.lat();
+                    longitude = details.lng();
+                    adresse = details.formattedAddress();
+                }
+            } else if (latitude != null && longitude != null) {
+                // Cas 2: seulement lat/lng fournis -> géocodage inverse pour obtenir placeId et adresse
+                var reverseResult = googleMapsService.reverseGeocode(latitude, longitude);
+                if (reverseResult != null) {
+                    placeId = reverseResult.placeId();
+                    adresse = reverseResult.formattedAddress();
+                }
+            }
+            
+            r.setLatitude(latitude);
+            r.setLongitude(longitude);
+            r.setAdresse(adresse);
+            r.setPlaceId(placeId);
+        }
+        
+        return recruteurRepo.save(r);
+    }
+
+    /**
+     * Mettre à jour un recruteur particulier avec géolocalisation en une seule opération
+     */
+    @Transactional
+    public Recruteur updateRecruteurParticulierWithTypeAndLocation(Long id, Date dateNaissance, String profession, MultipartFile photo, MultipartFile carteIdentite, Double latitude, Double longitude, String adresse, String placeId) throws IOException {
+        Recruteur r = recruteurRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("Recruteur introuvable"));
+        
+        // Définir le type si ce n'est pas déjà fait
+        if (r.getTypeRecruteur() == null) {
+            r.setTypeRecruteur(TypeRecruteur.PARTICULIER);
+        }
+        
+        if (dateNaissance != null) r.setDateNaissance(dateNaissance);
+        if (profession != null && !profession.trim().isEmpty()) r.setProfession(profession);
+        if (photo != null && !photo.isEmpty()) {
+            String path = storageService.store(photo, "recruteurs");
+            r.setUrlPhoto(path);
+        }
+        if (carteIdentite != null && !carteIdentite.isEmpty()) {
+            String pathCI = storageService.store(carteIdentite, "recruteurs");
+            r.setCarteIdentite(pathCI);
+        }
+        
+        // Gestion de la géolocalisation
+        if (latitude != null || longitude != null || adresse != null || placeId != null) {
+            // Gestion de la géolocalisation : deux cas possibles
+            if (placeId != null && !placeId.isBlank()) {
+                // Cas 1: placeId fourni -> enrichir avec les détails Google Maps
+                var details = googleMapsService.fetchPlaceDetails(placeId);
+                if (details != null) {
+                    latitude = details.lat();
+                    longitude = details.lng();
+                    adresse = details.formattedAddress();
+                }
+            } else if (latitude != null && longitude != null) {
+                // Cas 2: seulement lat/lng fournis -> géocodage inverse pour obtenir placeId et adresse
+                var reverseResult = googleMapsService.reverseGeocode(latitude, longitude);
+                if (reverseResult != null) {
+                    placeId = reverseResult.placeId();
+                    adresse = reverseResult.formattedAddress();
+                }
+            }
+            
+            r.setLatitude(latitude);
+            r.setLongitude(longitude);
+            r.setAdresse(adresse);
+            r.setPlaceId(placeId);
+        }
+        
         return recruteurRepo.save(r);
     }
 }

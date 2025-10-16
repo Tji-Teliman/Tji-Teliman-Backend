@@ -42,6 +42,8 @@ public class Recruteur extends Utilisateur {
 
     private String urlPhoto;
 
+    private String carteIdentite;
+
     private String nomEntreprise;
 
     private String secteurActivite;

@@ -5,6 +5,7 @@ import java.util.Date;
 public class PaiementDTO {
     private Long id;
     private Double montant;
+    private String telephone;
     private Date datePaiement;
     private String statutPaiement;
     private Long candidatureId;
@@ -27,6 +28,9 @@ public class PaiementDTO {
 
     public Double getMontant() { return montant; }
     public void setMontant(Double montant) { this.montant = montant; }
+
+    public String getTelephone() { return telephone; }
+    public void setTelephone(String telephone) { this.telephone = telephone; }
 
     public Date getDatePaiement() { return datePaiement; }
     public void setDatePaiement(Date datePaiement) { this.datePaiement = datePaiement; }

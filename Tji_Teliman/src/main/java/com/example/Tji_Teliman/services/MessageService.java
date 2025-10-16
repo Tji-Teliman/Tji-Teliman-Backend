@@ -1,6 +1,7 @@
 package com.example.Tji_Teliman.services;
 
 import com.example.Tji_Teliman.dto.MessageDTO;
+import com.example.Tji_Teliman.dto.ConversationDTO;
 import com.example.Tji_Teliman.entites.JeunePrestateur;
 import com.example.Tji_Teliman.entites.Message;
 import com.example.Tji_Teliman.entites.Recruteur;
@@ -17,6 +18,7 @@ import java.nio.file.*;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class MessageService {
@@ -104,6 +106,82 @@ public class MessageService {
         return messages.stream()
                 .map(messageMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    // 🔵 4. Supprimer un message
+    @Transactional
+    public void supprimerMessage(Long messageId, Long userId) {
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new RuntimeException("Message non trouvé"));
+
+        // Vérifier que l'utilisateur est l'expéditeur du message
+        Long expediteurId = message.getIdExpediteur();
+        if (!expediteurId.equals(userId)) {
+            throw new RuntimeException("Vous ne pouvez supprimer que vos propres messages");
+        }
+
+        messageRepository.delete(message);
+    }
+
+    // 🔵 6. Obtenir les conversations d'un utilisateur
+    @Transactional(readOnly = true)
+    public List<ConversationDTO> getConversations(Long userId) {
+        // Récupérer toutes les conversations où l'utilisateur est impliqué
+        List<Message> messages = messageRepository.findConversationsByUserId(userId);
+        
+        // Grouper par destinataire et créer les DTOs de conversation
+        return messages.stream()
+                .collect(Collectors.groupingBy(msg -> {
+                    // Déterminer l'ID du destinataire basé sur qui envoie le message
+                    if (msg.isEnvoyeParRecruteur()) {
+                        return msg.getJeunePrestateur().getId();
+                    } else {
+                        return msg.getRecruteur().getId();
+                    }
+                }))
+                .entrySet().stream()
+                .map(entry -> {
+                    Long destinataireId = entry.getKey();
+                    List<Message> conversationMessages = entry.getValue();
+                    
+                    // Trouver le dernier message
+                    Message dernierMessage = conversationMessages.stream()
+                            .max((m1, m2) -> m1.getDateMessage().compareTo(m2.getDateMessage()))
+                            .orElse(null);
+                    
+                    ConversationDTO conversation = new ConversationDTO();
+                    conversation.setDestinataireId(destinataireId);
+                    conversation.setDernierMessage(dernierMessage != null ? dernierMessage.getContenu() : "");
+                    conversation.setDateDernierMessage(dernierMessage != null ? dernierMessage.getDateMessage() : null);
+                    conversation.setMessagesNonLus(0); // Pas de gestion des messages non lus pour le moment
+                    conversation.setTypeDernierMessage(dernierMessage != null ? dernierMessage.getTypeMessage().toString() : "");
+                    
+                    // Récupérer les informations du destinataire
+                    if (dernierMessage != null) {
+                        if (dernierMessage.isEnvoyeParRecruteur()) {
+                            // Le destinataire est le jeune
+                            conversation.setDestinataireNom(dernierMessage.getJeunePrestateur().getNom());
+                            conversation.setDestinatairePrenom(dernierMessage.getJeunePrestateur().getPrenom());
+                            conversation.setDestinatairePhoto(dernierMessage.getJeunePrestateur().getUrlPhoto());
+                        } else {
+                            // Le destinataire est le recruteur
+                            conversation.setDestinataireNom(dernierMessage.getRecruteur().getNom());
+                            conversation.setDestinatairePrenom(dernierMessage.getRecruteur().getPrenom());
+                            conversation.setDestinatairePhoto(dernierMessage.getRecruteur().getUrlPhoto());
+                        }
+                    }
+                    
+                    return conversation;
+                })
+                .collect(Collectors.toList());
+    }
+
+    // 🔵 7. Obtenir un message par ID
+    @Transactional(readOnly = true)
+    public MessageDTO getMessageById(Long messageId) {
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new RuntimeException("Message non trouvé"));
+        return messageMapper.toDto(message);
     }
 }
 
