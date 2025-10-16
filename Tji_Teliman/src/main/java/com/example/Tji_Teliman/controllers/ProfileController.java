@@ -1,6 +1,7 @@
 package com.example.Tji_Teliman.controllers;
 
 import com.example.Tji_Teliman.services.ProfileService;
+import com.example.Tji_Teliman.services.GoogleMapsService;
 import com.example.Tji_Teliman.dto.JeunePrestateurProfileDTO;
 import com.example.Tji_Teliman.dto.UserProfileDTO;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.Date;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,9 +23,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class ProfileController {
 
     private final ProfileService profileService;
+    private final GoogleMapsService googleMapsService;
 
-    public ProfileController(ProfileService profileService) {
+    public ProfileController(ProfileService profileService, GoogleMapsService googleMapsService) {
         this.profileService = profileService;
+        this.googleMapsService = googleMapsService;
     }
 
     @PostMapping("/jeunes/{id}")
@@ -99,6 +103,27 @@ public class ProfileController {
         }
         return ResponseEntity.ok(r);
     }
+
+    /**
+     * Endpoint pour le géocodage inverse : convertir lat/lng en placeId et adresse
+     * Utile quand le frontend a seulement les coordonnées du clic sur la carte pour les profils
+     */
+    @PostMapping("/reverse-geocode")
+    public ResponseEntity<?> reverseGeocode(@RequestBody ReverseGeocodeRequest req) {
+        try {
+            var result = googleMapsService.reverseGeocode(req.latitude(), req.longitude());
+            if (result != null) {
+                return ResponseEntity.ok(new ApiResponse(true, "Géocodage inverse réussi", result));
+            } else {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Impossible de géocoder cette position", null));
+            }
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, "Erreur lors du géocodage inverse: " + ex.getMessage(), null));
+        }
+    }
+
+    public record ReverseGeocodeRequest(Double latitude, Double longitude) {}
+    public record ApiResponse(boolean success, String message, Object data) {}
 }
 
 

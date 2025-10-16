@@ -2,6 +2,7 @@ package com.example.Tji_Teliman.entites;
 
 import com.example.Tji_Teliman.entites.enums.Role;
 import com.example.Tji_Teliman.entites.enums.TypeGenre;
+import com.example.Tji_Teliman.entites.enums.StatutUtilisateur;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Column;
@@ -56,12 +57,17 @@ public abstract class Utilisateur {
     @Column(nullable = false)
     private TypeGenre genre;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private StatutUtilisateur statut;
+
     @Column(nullable = false)
     private Date dateCreation;
 
     @PrePersist
     protected void onCreate() {
         this.dateCreation = new Date();
+        if (this.statut == null) this.statut = StatutUtilisateur.ACTIVER;
     }
 
 }

@@ -53,8 +53,8 @@ public class Notation {
     @Temporal(TemporalType.TIMESTAMP)
     private Date dateNotation;
 
-    @OneToOne(optional = false)
-    @JoinColumn(name = "candidature_id", nullable = false, unique = true)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "candidature_id", nullable = false)
     private Candidature candidature;
 
     @PrePersist

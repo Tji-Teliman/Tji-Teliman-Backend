@@ -1,6 +1,7 @@
 package com.example.Tji_Teliman.entites;
 
 import com.example.Tji_Teliman.entites.enums.StatutMission;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -20,6 +21,7 @@ import jakarta.persistence.PreUpdate;
 import java.time.LocalTime;
 import java.util.Date;
 import java.util.Set;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.AllArgsConstructor;
@@ -84,6 +86,15 @@ public class Mission {
 
     @OneToMany(mappedBy = "mission")
     private Set<Candidature> candidatures;
+
+    @OneToMany(mappedBy = "mission")
+    @JsonIgnore
+    private List<SignalementMission> signalements;
+
+    private Integer nbSignalements;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date derniereDateSignalement;
     
     private LocalTime heureDebut;
     
@@ -108,12 +119,25 @@ public class Mission {
     
     @Transient
     public Long getDureHeures() {
-        Long jours = getDureJours();
-        if (jours == null) return null;
-        if (heureDebut != null && heureFin != null) {
-            long heuresParJour = java.time.Duration.between(heureDebut, heureFin).toHours();
-            return jours * Math.max(0, heuresParJour);
+        if (dateDebut == null || dateFin == null) {
+            return null;
         }
+        
+        // Si les heures de début et fin sont définies, calculer la durée en heures
+        if (heureDebut != null && heureFin != null) {
+            // Si c'est le même jour (dateDebut == dateFin)
+            if (dateDebut.equals(dateFin)) {
+                long heures = java.time.Duration.between(heureDebut, heureFin).toHours();
+                return Math.max(0, heures);
+            } else {
+                // Si c'est sur plusieurs jours, calculer la durée totale
+                Long jours = getDureJours();
+                if (jours == null) return null;
+                long heuresParJour = java.time.Duration.between(heureDebut, heureFin).toHours();
+                return jours * Math.max(0, heuresParJour);
+            }
+        }
+        
         return null;
     }
 }

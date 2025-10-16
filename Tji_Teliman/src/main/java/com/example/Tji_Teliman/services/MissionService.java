@@ -5,6 +5,7 @@ import com.example.Tji_Teliman.entites.Mission;
 import com.example.Tji_Teliman.entites.Recruteur;
 import com.example.Tji_Teliman.entites.enums.StatutMission;
 import com.example.Tji_Teliman.dto.MissionDTO;
+import com.example.Tji_Teliman.repository.CandidatureRepository;
 import com.example.Tji_Teliman.repository.CategorieRepository;
 import com.example.Tji_Teliman.repository.MissionRepository;
 import com.example.Tji_Teliman.repository.RecruteurRepository;
@@ -19,13 +20,15 @@ public class MissionService {
     private final MissionRepository missionRepository;
     private final RecruteurRepository recruteurRepository;
     private final CategorieRepository categorieRepository;
+    private final CandidatureRepository candidatureRepository;
     private final NotificationService notificationService;
     private final GoogleMapsService googleMapsService;
 
-    public MissionService(MissionRepository missionRepository, RecruteurRepository recruteurRepository, CategorieRepository categorieRepository, NotificationService notificationService, GoogleMapsService googleMapsService) {
+    public MissionService(MissionRepository missionRepository, RecruteurRepository recruteurRepository, CategorieRepository categorieRepository, CandidatureRepository candidatureRepository, NotificationService notificationService, GoogleMapsService googleMapsService) {
         this.missionRepository = missionRepository;
         this.recruteurRepository = recruteurRepository;
         this.categorieRepository = categorieRepository;
+        this.candidatureRepository = candidatureRepository;
         this.notificationService = notificationService;
         this.googleMapsService = googleMapsService;
     }
@@ -40,14 +43,21 @@ public class MissionService {
         m.setExigence(exigence);
         m.setDateDebut(dateDebut);
         m.setDateFin(dateFin);
-        // Si placeId fourni et clé présente, enrichir via Google (écrase les valeurs fournies)
+        // Gestion de la géolocalisation : deux cas possibles
         if (placeId != null && !placeId.isBlank()) {
+            // Cas 1: placeId fourni -> enrichir avec les détails Google Maps
             var details = googleMapsService.fetchPlaceDetails(placeId);
             if (details != null) {
-                // Toujours utiliser les valeurs de Google Maps si placeId fourni
                 latitude = details.lat();
                 longitude = details.lng();
                 adresse = details.formattedAddress();
+            }
+        } else if (latitude != null && longitude != null) {
+            // Cas 2: seulement lat/lng fournis -> géocodage inverse pour obtenir placeId et adresse
+            var reverseResult = googleMapsService.reverseGeocode(latitude, longitude);
+            if (reverseResult != null) {
+                placeId = reverseResult.placeId();
+                adresse = reverseResult.formattedAddress();
             }
         }
         m.setLatitude(latitude);
@@ -87,14 +97,23 @@ public class MissionService {
         if (exigence != null && !exigence.trim().isEmpty()) m.setExigence(exigence);
         if (dateDebut != null) m.setDateDebut(dateDebut);
         if (dateFin != null) m.setDateFin(dateFin);
+        // Gestion de la géolocalisation : deux cas possibles
         if (placeId != null && !placeId.trim().isEmpty()) {
+            // Cas 1: placeId fourni -> enrichir avec les détails Google Maps
             m.setPlaceId(placeId);
             var details = googleMapsService.fetchPlaceDetails(placeId);
             if (details != null) {
-                // Toujours utiliser les valeurs de Google Maps si placeId fourni
                 latitude = details.lat();
                 longitude = details.lng();
                 adresse = details.formattedAddress();
+            }
+        } else if (latitude != null && longitude != null) {
+            // Cas 2: seulement lat/lng fournis -> géocodage inverse pour obtenir placeId et adresse
+            var reverseResult = googleMapsService.reverseGeocode(latitude, longitude);
+            if (reverseResult != null) {
+                placeId = reverseResult.placeId();
+                adresse = reverseResult.formattedAddress();
+                m.setPlaceId(placeId);
             }
         }
         if (latitude != null) m.setLatitude(latitude);
@@ -135,11 +154,8 @@ public class MissionService {
             dto.setCategorieNom(m.getCategorie().getNom());
             dto.setCategorieUrlPhoto(m.getCategorie().getUrlPhoto());
         }
-        if (m.getRecruteur() != null) {
-            dto.setRecruteurId(m.getRecruteur().getId());
-            dto.setRecruteurNom(m.getRecruteur().getNom());
-            dto.setRecruteurPrenom(m.getRecruteur().getPrenom());
-        }
+        // Compter le nombre de candidatures pour cette mission
+        dto.setNombreCandidatures((long) candidatureRepository.findByMission(m).size());
         return dto;
     }
 
@@ -147,6 +163,11 @@ public class MissionService {
     public MissionDTO getById(Long id) {
         Mission m = missionRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Mission introuvable"));
         return toDTO(m);
+    }
+
+    @Transactional(readOnly = true)
+    public Long countCandidaturesByMission(Long missionId) {
+        return (long) candidatureRepository.findByMission(missionRepository.findById(missionId).orElseThrow(() -> new IllegalArgumentException("Mission introuvable"))).size();
     }
 
     @Transactional

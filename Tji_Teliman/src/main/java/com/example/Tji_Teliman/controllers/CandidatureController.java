@@ -2,6 +2,7 @@ package com.example.Tji_Teliman.controllers;
 
 import com.example.Tji_Teliman.dto.CandidatureDTO;
 import com.example.Tji_Teliman.dto.MotivationDTO;
+import com.example.Tji_Teliman.dto.ProfilCandidatureDTO;
 import com.example.Tji_Teliman.entites.Candidature;
 import com.example.Tji_Teliman.services.CandidatureService;
 import org.springframework.http.ResponseEntity;
@@ -112,6 +113,16 @@ public class CandidatureController {
             response.put("missions", missionsAccomplies);
             
             return ResponseEntity.ok(new ApiResponse(true, "Missions accomplies récupérées", response));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
+        }
+    }
+
+    @GetMapping("/{candidatureId}/profil")
+    public ResponseEntity<?> getProfilCandidature(@PathVariable Long candidatureId) {
+        try {
+            ProfilCandidatureDTO profil = candidatureService.getProfilCandidature(candidatureId);
+            return ResponseEntity.ok(new ApiResponse(true, "Profil de candidature récupéré", profil));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
         }

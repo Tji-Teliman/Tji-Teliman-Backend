@@ -9,8 +9,11 @@ public class CandidatureDTO {
     private Long jeunePrestateurId;
     private String jeunePrestateurNom;
     private String jeunePrestateurPrenom;
+    private String jeunePrestateurUrlPhoto;
+    private String motivationContenu;
     private Long missionId;
     private String missionTitre;
+    private String missionLieu;
     private Long recruteurId;
     private String recruteurNom;
     private String recruteurPrenom;
@@ -27,10 +30,16 @@ public class CandidatureDTO {
     public void setJeunePrestateurNom(String jeunePrestateurNom) { this.jeunePrestateurNom = jeunePrestateurNom; }
     public String getJeunePrestateurPrenom() { return jeunePrestateurPrenom; }
     public void setJeunePrestateurPrenom(String jeunePrestateurPrenom) { this.jeunePrestateurPrenom = jeunePrestateurPrenom; }
+    public String getJeunePrestateurUrlPhoto() { return jeunePrestateurUrlPhoto; }
+    public void setJeunePrestateurUrlPhoto(String jeunePrestateurUrlPhoto) { this.jeunePrestateurUrlPhoto = jeunePrestateurUrlPhoto; }
+    public String getMotivationContenu() { return motivationContenu; }
+    public void setMotivationContenu(String motivationContenu) { this.motivationContenu = motivationContenu; }
     public Long getMissionId() { return missionId; }
     public void setMissionId(Long missionId) { this.missionId = missionId; }
     public String getMissionTitre() { return missionTitre; }
     public void setMissionTitre(String missionTitre) { this.missionTitre = missionTitre; }
+    public String getMissionLieu() { return missionLieu; }
+    public void setMissionLieu(String missionLieu) { this.missionLieu = missionLieu; }
     public Long getRecruteurId() { return recruteurId; }
     public void setRecruteurId(Long recruteurId) { this.recruteurId = recruteurId; }
     public String getRecruteurNom() { return recruteurNom; }

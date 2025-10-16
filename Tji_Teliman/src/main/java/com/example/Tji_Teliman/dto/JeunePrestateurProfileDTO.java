@@ -21,7 +21,7 @@ public class JeunePrestateurProfileDTO {
     private String carteIdentite;
 
     private List<String> competences; // only names
-    private List<NotationDTO> notations; // kept for later use
+    private NotationMoyenneDTO notationMoyenne; // moyenne des notes reçues
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -49,8 +49,8 @@ public class JeunePrestateurProfileDTO {
     public void setCarteIdentite(String carteIdentite) { this.carteIdentite = carteIdentite; }
     public List<String> getCompetences() { return competences; }
     public void setCompetences(List<String> competences) { this.competences = competences; }
-    public List<NotationDTO> getNotations() { return notations; }
-    public void setNotations(List<NotationDTO> notations) { this.notations = notations; }
+    public NotationMoyenneDTO getNotationMoyenne() { return notationMoyenne; }
+    public void setNotationMoyenne(NotationMoyenneDTO notationMoyenne) { this.notationMoyenne = notationMoyenne; }
 }
 
 
