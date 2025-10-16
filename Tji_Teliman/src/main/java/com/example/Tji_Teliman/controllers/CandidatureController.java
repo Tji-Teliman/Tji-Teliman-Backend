@@ -1,10 +1,12 @@
 package com.example.Tji_Teliman.controllers;
 
+import com.example.Tji_Teliman.config.JwtUtils;
 import com.example.Tji_Teliman.dto.CandidatureDTO;
 import com.example.Tji_Teliman.dto.MotivationDTO;
 import com.example.Tji_Teliman.dto.ProfilCandidatureDTO;
 import com.example.Tji_Teliman.entites.Candidature;
 import com.example.Tji_Teliman.services.CandidatureService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,9 +17,11 @@ import java.util.List;
 public class CandidatureController {
 
     private final CandidatureService candidatureService;
+    private final JwtUtils jwtUtils;
 
-    public CandidatureController(CandidatureService candidatureService) {
+    public CandidatureController(CandidatureService candidatureService, JwtUtils jwtUtils) {
         this.candidatureService = candidatureService;
+        this.jwtUtils = jwtUtils;
     }
 
     public record PostulerRequest(
@@ -26,12 +30,16 @@ public class CandidatureController {
 
     public record ApiResponse(boolean success, String message, Object data) {}
 
-    @PostMapping("/jeune/{jeuneId}/mission/{missionId}")
+    @PostMapping("/mission/{missionId}")
     public ResponseEntity<?> postuler(
-            @PathVariable Long jeuneId,
             @PathVariable Long missionId,
-            @RequestBody PostulerRequest request) {
+            @RequestBody PostulerRequest request,
+            HttpServletRequest httpRequest) {
         try {
+            Long jeuneId = jwtUtils.getUserIdFromToken(httpRequest);
+            if (jeuneId == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
+            }
             Candidature candidature = candidatureService.postuler(jeuneId, missionId, request.motivationContenu());
             return ResponseEntity.ok(new ApiResponse(true, "Candidature soumise avec succès", candidatureService.toCandidatureDTO(candidature)));
         } catch (IllegalArgumentException ex) {
@@ -39,9 +47,18 @@ public class CandidatureController {
         }
     }
 
-    @GetMapping("/jeune/{jeuneId}")
-    public ResponseEntity<List<CandidatureDTO>> getCandidaturesByJeune(@PathVariable Long jeuneId) {
-        return ResponseEntity.ok(candidatureService.getCandidaturesByJeune(jeuneId));
+    @GetMapping("/mes-candidatures")
+    public ResponseEntity<?> getCandidaturesByJeune(HttpServletRequest httpRequest) {
+        try {
+            Long jeuneId = jwtUtils.getUserIdFromToken(httpRequest);
+            if (jeuneId == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
+            }
+            List<CandidatureDTO> candidatures = candidatureService.getCandidaturesByJeune(jeuneId);
+            return ResponseEntity.ok(new ApiResponse(true, "Candidatures récupérées", candidatures));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
+        }
     }
 
     @GetMapping("/mission/{missionId}")
@@ -81,8 +98,12 @@ public class CandidatureController {
     @PutMapping("/{candidatureId}/valider")
     public ResponseEntity<?> validerCandidature(
             @PathVariable Long candidatureId,
-            @RequestParam Long recruteurId) {
+            HttpServletRequest httpRequest) {
         try {
+            Long recruteurId = jwtUtils.getUserIdFromToken(httpRequest);
+            if (recruteurId == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
+            }
             Candidature candidature = candidatureService.validerCandidature(candidatureId, recruteurId);
             return ResponseEntity.ok(new ApiResponse(true, "Candidature validée avec succès", candidatureService.toCandidatureDTO(candidature)));
         } catch (IllegalArgumentException ex) {
@@ -93,26 +114,14 @@ public class CandidatureController {
     @PutMapping("/{candidatureId}/rejeter")
     public ResponseEntity<?> rejeterCandidature(
             @PathVariable Long candidatureId,
-            @RequestParam Long recruteurId) {
+            HttpServletRequest httpRequest) {
         try {
+            Long recruteurId = jwtUtils.getUserIdFromToken(httpRequest);
+            if (recruteurId == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
+            }
             Candidature candidature = candidatureService.rejeterCandidature(candidatureId, recruteurId);
             return ResponseEntity.ok(new ApiResponse(true, "Candidature rejetée avec succès", candidatureService.toCandidatureDTO(candidature)));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
-        }
-    }
-
-    @GetMapping("/jeune/{jeuneId}/missions-accomplies")
-    public ResponseEntity<?> getMissionsAccompliesByJeune(@PathVariable Long jeuneId) {
-        try {
-            List<CandidatureDTO> missionsAccomplies = candidatureService.getMissionsAccompliesByJeune(jeuneId);
-            Long nombreMissions = candidatureService.getNombreMissionsAccompliesByJeune(jeuneId);
-            
-            var response = new java.util.HashMap<String, Object>();
-            response.put("nombreMissions", nombreMissions);
-            response.put("missions", missionsAccomplies);
-            
-            return ResponseEntity.ok(new ApiResponse(true, "Missions accomplies récupérées", response));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
         }

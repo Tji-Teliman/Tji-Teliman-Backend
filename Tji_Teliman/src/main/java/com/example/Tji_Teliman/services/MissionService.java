@@ -204,4 +204,21 @@ public class MissionService {
         cal.set(java.util.Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
+
+    /**
+     * Terminer une mission (changer le statut à TERMINEE) - Version simple pour test
+     */
+    @Transactional
+    public Mission terminerMission(Long missionId) {
+        Mission mission = missionRepository.findById(missionId)
+                .orElseThrow(() -> new IllegalArgumentException("Mission introuvable"));
+        
+        mission.setStatut(StatutMission.TERMINEE);
+        Mission savedMission = missionRepository.save(mission);
+        
+        // Notifier le recruteur que la mission est terminée et qu'il doit effectuer le paiement
+        notificationService.notifyMissionTerminee(mission.getRecruteur(), savedMission);
+        
+        return savedMission;
+    }
 }

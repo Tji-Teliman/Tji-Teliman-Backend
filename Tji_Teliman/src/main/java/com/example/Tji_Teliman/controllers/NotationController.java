@@ -1,12 +1,12 @@
 package com.example.Tji_Teliman.controllers;
 
+import com.example.Tji_Teliman.config.JwtUtils;
 import com.example.Tji_Teliman.entites.Notation;
 import com.example.Tji_Teliman.services.NotationService;
 import com.example.Tji_Teliman.dto.NotationDTO;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Optional;
-import java.util.Map;
-import java.util.HashMap;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,9 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class NotationController {
 
     private final NotationService notationService;
+    private final JwtUtils jwtUtils;
 
-    public NotationController(NotationService notationService) {
+    public NotationController(NotationService notationService, JwtUtils jwtUtils) {
         this.notationService = notationService;
+        this.jwtUtils = jwtUtils;
     }
 
     public record NoterJeuneRequest(Integer note, String commentaire) {}
@@ -108,55 +110,69 @@ public class NotationController {
         }
     }
 
-    @GetMapping("/recruteur/{recruteurId}")
-    public ResponseEntity<List<NotationDTO>> getNotationsByRecruteur(@PathVariable Long recruteurId) {
-        List<NotationDTO> notations = notationService.getNotationsByRecruteur(recruteurId).stream()
-                .map(notationService::toDTO)
-                .toList();
-        return ResponseEntity.ok(notations);
-    }
-
-    @GetMapping("/jeune/{jeuneId}")
-    public ResponseEntity<List<NotationDTO>> getNotationsByJeunePrestateur(@PathVariable Long jeuneId) {
-        List<NotationDTO> notations = notationService.getNotationsByJeunePrestateur(jeuneId).stream()
-                .map(notationService::toDTO)
-                .toList();
-        return ResponseEntity.ok(notations);
-    }
-
-    @GetMapping("/recruteur/{recruteurId}/recues")
-    public ResponseEntity<List<NotationDTO>> getNotationsRecuesParRecruteur(@PathVariable Long recruteurId) {
-        List<NotationDTO> notations = notationService.getNotationsRecuesParRecruteur(recruteurId).stream()
-                .map(notationService::toDTO)
-                .toList();
-        return ResponseEntity.ok(notations);
-    }
-
-    @GetMapping("/jeune/{jeuneId}/recues")
-    public ResponseEntity<List<NotationDTO>> getNotationsRecuesParJeune(@PathVariable Long jeuneId) {
-        List<NotationDTO> notations = notationService.getNotationsRecuesParJeune(jeuneId).stream()
-                .map(notationService::toDTO)
-                .toList();
-        return ResponseEntity.ok(notations);
-    }
-
-    @GetMapping("/recruteur/{recruteurId}/moyenne")
-    public ResponseEntity<?> getMoyenneNotesRecruteur(@PathVariable Long recruteurId) {
-        Double moyenne = notationService.getMoyenneNotesRecruteur(recruteurId);
-        if (moyenne != null) {
-            return ResponseEntity.ok(new ApiResponse(true, "Moyenne calculée", moyenne));
-        } else {
-            return ResponseEntity.ok(new ApiResponse(false, "Aucune notation reçue", null));
+    @GetMapping("/mes-notations-recruteur")
+    public ResponseEntity<?> getNotationsByRecruteur(HttpServletRequest httpRequest) {
+        try {
+            Long recruteurId = jwtUtils.getUserIdFromToken(httpRequest);
+            if (recruteurId == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
+            }
+            List<NotationDTO> notations = notationService.getNotationsByRecruteur(recruteurId).stream()
+                    .map(notationService::toDTO)
+                    .toList();
+            return ResponseEntity.ok(new ApiResponse(true, "Mes notations récupérées", notations));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
         }
     }
 
-    @GetMapping("/jeune/{jeuneId}/moyenne")
-    public ResponseEntity<?> getMoyenneNotesJeune(@PathVariable Long jeuneId) {
-        Double moyenne = notationService.getMoyenneNotesJeune(jeuneId);
-        if (moyenne != null) {
-            return ResponseEntity.ok(new ApiResponse(true, "Moyenne calculée", moyenne));
-        } else {
-            return ResponseEntity.ok(new ApiResponse(false, "Aucune notation reçue", null));
+    @GetMapping("/mes-notations")
+    public ResponseEntity<?> getNotationsByJeunePrestateur(HttpServletRequest httpRequest) {
+        try {
+            Long jeuneId = jwtUtils.getUserIdFromToken(httpRequest);
+            if (jeuneId == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
+            }
+            List<NotationDTO> notations = notationService.getNotationsByJeunePrestateur(jeuneId).stream()
+                    .map(notationService::toDTO)
+                    .toList();
+            return ResponseEntity.ok(new ApiResponse(true, "Mes notations récupérées", notations));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
+        }
+    }
+
+    @GetMapping("/mes-notations-recues")
+    public ResponseEntity<?> getNotationsRecuesParUtilisateur(HttpServletRequest httpRequest) {
+        try {
+            Long userId = jwtUtils.getUserIdFromToken(httpRequest);
+            if (userId == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
+            }
+            List<NotationDTO> notations = notationService.getNotationsRecuesParUtilisateur(userId).stream()
+                    .map(notationService::toDTO)
+                    .toList();
+            return ResponseEntity.ok(new ApiResponse(true, "Mes notations reçues", notations));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
+        }
+    }
+
+    @GetMapping("/moyenne")
+    public ResponseEntity<?> getMoyenneNotesUtilisateur(HttpServletRequest httpRequest) {
+        try {
+            Long userId = jwtUtils.getUserIdFromToken(httpRequest);
+            if (userId == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
+            }
+            Double moyenne = notationService.getMoyenneNotesUtilisateur(userId);
+            if (moyenne != null) {
+                return ResponseEntity.ok(new ApiResponse(true, "Moyenne calculée", moyenne));
+            } else {
+                return ResponseEntity.ok(new ApiResponse(false, "Aucune notation reçue", null));
+            }
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
         }
     }
 }
