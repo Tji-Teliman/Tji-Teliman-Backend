@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import com.example.Tji_Teliman.entites.enums.TypeRecruteur;
 import com.example.Tji_Teliman.config.JwtService;
+import com.example.Tji_Teliman.entites.enums.StatutUtilisateur;
 
 @Service
 public class UtilisateurService {
@@ -104,6 +105,9 @@ public class UtilisateurService {
             throw new IllegalArgumentException("Utilisateur introuvable");
         }
         var user = userOpt.get();
+        if (user.getStatut() == StatutUtilisateur.DESACTIVER) {
+            throw new IllegalArgumentException("Compte désactivé");
+        }
         if (!passwordEncoder.matches(motDePasse, user.getMotDePasse())) {
             throw new IllegalArgumentException("Mot de passe invalide");
         }
