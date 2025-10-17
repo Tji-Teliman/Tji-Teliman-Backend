@@ -55,7 +55,8 @@ public class AdministrateurService {
         long totalJeunes = jeuneRepo.count();
         long totalRecruteurs = recruteurRepo.count();
         long totalUtilisateurs = utilisateurRepository.count();
-        long totalMissionsPubliees = missionRepository.countByStatut(StatutMission.EN_ATTENTE);
+        // Compter toutes les missions publiées (tous les statuts)
+        long totalMissionsPubliees = missionRepository.count();
 
         // Exclure l'admin courant du total utilisateurs si présent
         if (adminId != null) {
@@ -69,9 +70,11 @@ public class AdministrateurService {
     @Transactional(readOnly = true)
     public AdminMissionsWithStatsResponse listMissionsWithStats() {
         List<Mission> all = missionRepository.findAll();
-        long totalPubliees = missionRepository.countByStatut(StatutMission.EN_ATTENTE);
+        // Compter toutes les missions publiées (tous les statuts)
+        long totalPubliees = missionRepository.count();
         long totalTerminees = missionRepository.countByStatut(StatutMission.TERMINEE);
-        long totalNonTerminees = missionRepository.countByStatut(StatutMission.EN_ATTENTE) + missionRepository.countByStatut(StatutMission.EN_COURS);
+        long totalNonTerminees = missionRepository.countByStatut(StatutMission.EN_ATTENTE) + 
+                                missionRepository.countByStatut(StatutMission.EN_COURS);
 
         java.util.Calendar cal = java.util.Calendar.getInstance();
         cal.set(java.util.Calendar.DAY_OF_MONTH, 1);
