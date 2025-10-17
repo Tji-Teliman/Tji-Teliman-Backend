@@ -6,6 +6,8 @@ import com.example.Tji_Teliman.dto.SystemStatsDTO;
 import com.example.Tji_Teliman.dto.AdminMissionsWithStatsResponse;
 import com.example.Tji_Teliman.dto.AdminPaiementsWithStatsResponse;
 import com.example.Tji_Teliman.entites.enums.StatutUtilisateur;
+import com.example.Tji_Teliman.config.JwtUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,43 +20,75 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdministrateurController {
 
     private final AdministrateurService administrateurService;
+    private final JwtUtils jwtUtils;
 
-    public AdministrateurController(AdministrateurService administrateurService) {
+    public AdministrateurController(AdministrateurService administrateurService, JwtUtils jwtUtils) {
         this.administrateurService = administrateurService;
+        this.jwtUtils = jwtUtils;
     }
 
-    @GetMapping("/{adminId}/utilisateurs")
-    public ResponseEntity<AdminUsersWithStatsResponse> listUsersWithStats(@PathVariable Long adminId) {
+    // Lister les utilisateurs avec statistiques (admin connecté)
+    @GetMapping("/utilisateurs")
+    public ResponseEntity<AdminUsersWithStatsResponse> listUsersWithStats(HttpServletRequest httpRequest) {
+        Long adminId = jwtUtils.getUserIdFromToken(httpRequest);
+        if (adminId == null) {
+            return ResponseEntity.badRequest().build();
+        }
         var payload = administrateurService.listUsersWithStats(adminId);
         return ResponseEntity.ok(payload);
     }
 
-    @GetMapping("/{adminId}/stats")
-    public ResponseEntity<SystemStatsDTO> getSystemStats(@PathVariable Long adminId) {
+    // Obtenir les statistiques système (admin connecté)
+    @GetMapping("/stats")
+    public ResponseEntity<SystemStatsDTO> getSystemStats(HttpServletRequest httpRequest) {
+        Long adminId = jwtUtils.getUserIdFromToken(httpRequest);
+        if (adminId == null) {
+            return ResponseEntity.badRequest().build();
+        }
         var stats = administrateurService.getSystemStats(adminId);
         return ResponseEntity.ok(stats);
     }
 
-    @GetMapping("/{adminId}/missions")
-    public ResponseEntity<AdminMissionsWithStatsResponse> listMissionsWithStats(@PathVariable Long adminId) {
+    // Lister les missions avec statistiques (admin connecté)
+    @GetMapping("/missions")
+    public ResponseEntity<AdminMissionsWithStatsResponse> listMissionsWithStats(HttpServletRequest httpRequest) {
+        Long adminId = jwtUtils.getUserIdFromToken(httpRequest);
+        if (adminId == null) {
+            return ResponseEntity.badRequest().build();
+        }
         var payload = administrateurService.listMissionsWithStats();
         return ResponseEntity.ok(payload);
     }
 
-    @GetMapping("/{adminId}/paiements")
-    public ResponseEntity<AdminPaiementsWithStatsResponse> listPaiementsWithStats(@PathVariable Long adminId) {
+    // Lister les paiements avec statistiques (admin connecté)
+    @GetMapping("/paiements")
+    public ResponseEntity<AdminPaiementsWithStatsResponse> listPaiementsWithStats(HttpServletRequest httpRequest) {
+        Long adminId = jwtUtils.getUserIdFromToken(httpRequest);
+        if (adminId == null) {
+            return ResponseEntity.badRequest().build();
+        }
         var payload = administrateurService.listPaiementsWithStats();
         return ResponseEntity.ok(payload);
     }
 
-    @PostMapping("/{adminId}/utilisateurs/{userId}/bloquer")
-    public ResponseEntity<?> blockUser(@PathVariable Long adminId, @PathVariable Long userId) {
+    // Bloquer un utilisateur (admin connecté)
+    @PostMapping("/utilisateurs/{userId}/bloquer")
+    public ResponseEntity<?> blockUser(HttpServletRequest httpRequest, @PathVariable Long userId) {
+        Long adminId = jwtUtils.getUserIdFromToken(httpRequest);
+        if (adminId == null) {
+            return ResponseEntity.badRequest().body("Token manquant ou invalide");
+        }
         administrateurService.setUserStatut(userId, StatutUtilisateur.DESACTIVER);
         return ResponseEntity.ok("Utilisateur bloquer avec succes");
     }
 
-    @PostMapping("/{adminId}/utilisateurs/{userId}/debloquer")
-    public ResponseEntity<?> unblockUser(@PathVariable Long adminId, @PathVariable Long userId) {
+    // Débloquer un utilisateur (admin connecté)
+    @PostMapping("/utilisateurs/{userId}/debloquer")
+    public ResponseEntity<?> unblockUser(HttpServletRequest httpRequest, @PathVariable Long userId) {
+        Long adminId = jwtUtils.getUserIdFromToken(httpRequest);
+        if (adminId == null) {
+            return ResponseEntity.badRequest().body("Token manquant ou invalide");
+        }
         administrateurService.setUserStatut(userId, StatutUtilisateur.ACTIVER);
         return ResponseEntity.ok("Utilisateur debloquer avec succes");
     }

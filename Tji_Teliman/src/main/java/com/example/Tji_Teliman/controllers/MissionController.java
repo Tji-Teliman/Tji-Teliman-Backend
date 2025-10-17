@@ -55,6 +55,7 @@ public class MissionController {
 
     public record ApiResponse(boolean success, String message, Object data) {}
 
+    // Créer une mission (recruteur connecté)
     @PostMapping("/creer")
     public ResponseEntity<?> create(@RequestBody CreateMissionRequest req, HttpServletRequest httpRequest) {
         try {
@@ -70,16 +71,19 @@ public class MissionController {
         }
     }
 
+    // Lister toutes les missions
     @GetMapping("/all")
     public ResponseEntity<List<MissionDTO>> listAll() {
         return ResponseEntity.ok(missionService.listAll().stream().map(missionService::toDTO).toList());
     }
 
+    // Lister les missions en attente
     @GetMapping("/en-attente")
     public ResponseEntity<List<MissionDTO>> listEnAttente() {
         return ResponseEntity.ok(missionService.listEnAttente().stream().map(missionService::toDTO).toList());
     }
 
+    // Obtenir une mission par son ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Long id) {
         try {
@@ -89,6 +93,7 @@ public class MissionController {
         }
     }
 
+    // Lister les missions du recruteur connecté
     @GetMapping("/mes-missions")
     public ResponseEntity<?> listByRecruteur(HttpServletRequest httpRequest) {
         try {
@@ -103,6 +108,7 @@ public class MissionController {
         }
     }
 
+    // Obtenir les statistiques du recruteur (total + missions)
     @GetMapping("/mes-stats")
     public ResponseEntity<?> getMissionsByRecruteurWithCount(HttpServletRequest httpRequest) {
         try {
@@ -120,6 +126,7 @@ public class MissionController {
         }
     }
 
+    // Lister les missions accomplies par le jeune connecté (avec nombre)
     @GetMapping("/mes-missions-accomplies")
     public ResponseEntity<?> getMissionsAccompliesByJeune(HttpServletRequest httpRequest) {
         try {
@@ -140,6 +147,7 @@ public class MissionController {
         }
     }
 
+    // Terminer une mission
     @PutMapping("/{id}/terminer")
     public ResponseEntity<?> terminerMission(@PathVariable Long id) {
         try {
@@ -151,6 +159,7 @@ public class MissionController {
         }
     }
 
+    // Mettre à jour une mission
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody CreateMissionRequest req) {
         try {
@@ -162,6 +171,7 @@ public class MissionController {
         }
     }
 
+    // Supprimer une mission
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         try {
@@ -173,6 +183,7 @@ public class MissionController {
     }
     
 
+    // Déclencher la vérification des missions terminées
     @PostMapping("/verifier-terminaison")
     public ResponseEntity<?> verifierTerminaison() {
         missionService.verifierMissionsTerminees();
@@ -183,6 +194,7 @@ public class MissionController {
      * Endpoint pour le géocodage inverse : convertir lat/lng en placeId et adresse
      * Utile quand le frontend a seulement les coordonnées du clic sur la carte
      */
+    // Géocodage inverse (lat/lng -> placeId et adresse)
     @PostMapping("/reverse-geocode")
     public ResponseEntity<?> reverseGeocode(@RequestBody ReverseGeocodeRequest req) {
         try {

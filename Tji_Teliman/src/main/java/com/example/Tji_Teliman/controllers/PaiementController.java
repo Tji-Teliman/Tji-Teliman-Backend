@@ -31,6 +31,7 @@ public class PaiementController {
     public record EffectuerPaiementRequest(Double montant, String telephone) {}
     public record ApiResponse(boolean success, String message, Object data) {}
 
+    // Effectuer un paiement pour une candidature (recruteur connecté)
     @PostMapping("/candidature/{candidatureId}")
     public ResponseEntity<?> effectuerPaiement(@PathVariable Long candidatureId, @RequestBody EffectuerPaiementRequest req, HttpServletRequest httpRequest) {
         try {
@@ -46,6 +47,7 @@ public class PaiementController {
         }
     }
 
+    // Lister tous les paiements
     @GetMapping("/all")
     public ResponseEntity<List<PaiementDTO>> getAllPaiements() {
         List<PaiementDTO> paiements = paiementService.getAllPaiements().stream()
@@ -54,6 +56,7 @@ public class PaiementController {
         return ResponseEntity.ok(paiements);
     }
 
+    // Obtenir un paiement par son ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getPaiementById(@PathVariable Long id) {
         Optional<Paiement> paiement = paiementService.getPaiementById(id);
@@ -65,6 +68,7 @@ public class PaiementController {
         }
     }
 
+    // Lister les paiements du recruteur connecté
     @GetMapping("/mes-paiements-recruteur")
     public ResponseEntity<?> getPaiementsByRecruteur(HttpServletRequest httpRequest) {
         try {
@@ -81,6 +85,7 @@ public class PaiementController {
         }
     }
 
+    // Lister les paiements du jeune prestataire connecté
     @GetMapping("/mes-paiements-jeune")
     public ResponseEntity<?> getPaiementsByJeunePrestateur(HttpServletRequest httpRequest) {
         try {
@@ -97,6 +102,7 @@ public class PaiementController {
         }
     }
 
+    // Obtenir le paiement lié à une candidature
     @GetMapping("/candidature/{candidatureId}")
     public ResponseEntity<?> getPaiementByCandidature(@PathVariable Long candidatureId) {
         Optional<Paiement> paiement = paiementService.getPaiementByCandidature(candidatureId);
@@ -108,6 +114,7 @@ public class PaiementController {
         }
     }
 
+    // Lister les paiements par statut
     @GetMapping("/statut/{statut}")
     public ResponseEntity<List<PaiementDTO>> getPaiementsByStatut(@PathVariable String statut) {
         try {

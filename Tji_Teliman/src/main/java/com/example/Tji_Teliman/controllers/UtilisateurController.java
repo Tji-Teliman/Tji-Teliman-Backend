@@ -1,6 +1,8 @@
 package com.example.Tji_Teliman.controllers;
 
+import com.example.Tji_Teliman.config.JwtUtils;
 import com.example.Tji_Teliman.services.UtilisateurService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,9 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class UtilisateurController {
 
     private final UtilisateurService utilisateurService;
+    private final JwtUtils jwtUtils;
 
-    public UtilisateurController(UtilisateurService utilisateurService) {
+    public UtilisateurController(UtilisateurService utilisateurService, JwtUtils jwtUtils) {
         this.utilisateurService = utilisateurService;
+        this.jwtUtils = jwtUtils;
     }
 
     public static class UserRegistrationRequest {
@@ -30,6 +34,7 @@ public class UtilisateurController {
 
     public record ApiResponse(boolean success, String message, Object data) {}
 
+    // Inscription utilisateur avec validations (téléphone, email gmail, mot de passe fort)
     @PostMapping("/inscription")
     public ResponseEntity<?> register(@RequestBody UserRegistrationRequest req) {
         try {
@@ -47,6 +52,7 @@ public class UtilisateurController {
         public String motDePasse;
     }
 
+    // Connexion standard via téléphone et mot de passe
     @PostMapping("/connexion")
     public ResponseEntity<?> login(@RequestBody LoginRequest req) {
         try {
@@ -56,6 +62,47 @@ public class UtilisateurController {
             return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
         } catch (Exception ex) {
             return ResponseEntity.internalServerError().body(new ApiResponse(false, "Connexion non reussie: " + ex.getMessage(), null));
+        }
+    }
+
+    public static class AdminLoginRequest {
+        public String email;
+        public String motDePasse;
+    }
+
+    // Connexion administrateur via email et mot de passe (réservé aux ADMINISTRATEUR)
+    @PostMapping("/connexion-admin")
+    public ResponseEntity<?> adminLogin(@RequestBody AdminLoginRequest req) {
+        try {
+            Object auth = utilisateurService.authenticateAdminByEmail(req.email, req.motDePasse);
+            return ResponseEntity.ok(new ApiResponse(true, "Connexion administrateur reussie", auth));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().body(new ApiResponse(false, "Connexion administrateur non reussie: " + ex.getMessage(), null));
+        }
+    }
+
+    public record ChangePasswordRequest(
+        String motDePasseActuel,
+        String nouveauMotDePasse,
+        String confirmationMotDePasse
+    ) {}
+
+    // Changer mon mot de passe (utilisateur connecté via token)
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changeMyPassword(HttpServletRequest httpRequest, @RequestBody ChangePasswordRequest request) {
+        try {
+            Long userId = jwtUtils.getUserIdFromToken(httpRequest);
+            if (userId == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
+            }
+            utilisateurService.changePassword(userId, request.motDePasseActuel(), request.nouveauMotDePasse(), request.confirmationMotDePasse());
+            return ResponseEntity.ok(new ApiResponse(true, "Mot de passe modifié avec succès", null));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().body(new ApiResponse(false, "Erreur lors du changement de mot de passe: " + ex.getMessage(), null));
         }
     }
 }

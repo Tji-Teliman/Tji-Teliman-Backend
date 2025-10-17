@@ -32,6 +32,7 @@ public class CategorieController {
     public record CategorieCreateRequest(String nom) {}
     public record ApiResponse(boolean success, String message, Object data) {}
 
+    // Créer une catégorie (admin) avec nom et photo
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<?> create(@RequestParam String nom, @RequestParam MultipartFile photo, HttpServletRequest httpRequest) {
         try {
@@ -49,12 +50,14 @@ public class CategorieController {
         }
     }
 
+    // Lister toutes les catégories
     @GetMapping
     public ResponseEntity<List<CategorieDTO>> list() {
         var list = categorieService.list().stream().map(categorieService::toDTO).toList();
         return ResponseEntity.ok(list);
     }
 
+    // Mettre à jour une catégorie (admin), nom et/ou photo
     @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
     public ResponseEntity<?> update(@PathVariable Long id, @RequestParam(required=false) String nom, @RequestParam(required=false) MultipartFile photo, HttpServletRequest httpRequest) {
         try {
@@ -72,6 +75,7 @@ public class CategorieController {
         }
     }
 
+    // Supprimer une catégorie (admin)
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id, HttpServletRequest httpRequest) {
         try {

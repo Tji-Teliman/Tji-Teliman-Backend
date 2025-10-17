@@ -1,6 +1,6 @@
 package com.example.Tji_Teliman.entites;
 
-import com.example.Tji_Teliman.entites.enums.StatutSignalement;
+import com.example.Tji_Teliman.entites.enums.TypeSignalement;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import jakarta.persistence.PrePersist;
@@ -25,7 +26,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "signalement_mission")
+@Table(
+    name = "signalement_mission",
+    uniqueConstraints = @UniqueConstraint(columnNames = {"mission_id", "jeune_id"})
+)
 public class SignalementMission {
 
     @Id
@@ -40,26 +44,20 @@ public class SignalementMission {
     @JoinColumn(name = "jeune_id", nullable = false)
     private JeunePrestateur jeunePrestateur;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String motif;
+    private TypeSignalement type;
 
     @Column(columnDefinition = "TEXT")
     private String description;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private StatutSignalement statut;
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(nullable = false)
     private Date dateCreation;
 
-    private String pieceJointe;
-
     @PrePersist
     void onCreate() {
         this.dateCreation = new Date();
-        if (this.statut == null) this.statut = StatutSignalement.OUVERT;
     }
 }
 

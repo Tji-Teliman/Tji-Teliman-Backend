@@ -33,6 +33,7 @@ public class ProfileController {
         this.jwtUtils = jwtUtils;
     }
 
+    // Créer ou mettre à jour mon profil (jeune ou recruteur)
     @PostMapping("/mon-profil")
     public ResponseEntity<?> createOrUpdateMyProfile(
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date dateNaissance,
@@ -129,6 +130,7 @@ public class ProfileController {
         }
     }
 
+    // Récupérer mon profil
     @GetMapping("/mon-profil")
     public ResponseEntity<?> getMyProfile(HttpServletRequest httpRequest) {
         try {
@@ -148,6 +150,7 @@ public class ProfileController {
      * Endpoint pour le géocodage inverse : convertir lat/lng en placeId et adresse
      * Utile quand le frontend a seulement les coordonnées du clic sur la carte pour les profils
      */
+    // Géocodage inverse pour profils (lat/lng -> placeId et adresse)
     @PostMapping("/reverse-geocode")
     public ResponseEntity<?> reverseGeocode(@RequestBody ReverseGeocodeRequest req) {
         try {
