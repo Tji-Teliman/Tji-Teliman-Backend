@@ -1,10 +1,6 @@
 package com.example.Tji_Teliman.controllers;
 
-import com.example.Tji_Teliman.dto.AdminUsersWithStatsResponse;
 import com.example.Tji_Teliman.services.AdministrateurService;
-import com.example.Tji_Teliman.dto.SystemStatsDTO;
-import com.example.Tji_Teliman.dto.AdminMissionsWithStatsResponse;
-import com.example.Tji_Teliman.dto.AdminPaiementsWithStatsResponse;
 import com.example.Tji_Teliman.entites.enums.StatutUtilisateur;
 import com.example.Tji_Teliman.config.JwtUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,10 +25,10 @@ public class AdministrateurController {
 
     // Lister les utilisateurs avec statistiques (admin connecté)
     @GetMapping("/utilisateurs")
-    public ResponseEntity<AdminUsersWithStatsResponse> listUsersWithStats(HttpServletRequest httpRequest) {
+    public ResponseEntity<?> listUsersWithStats(HttpServletRequest httpRequest) {
         Long adminId = jwtUtils.getUserIdFromToken(httpRequest);
-        if (adminId == null) {
-            return ResponseEntity.badRequest().build();
+        if (adminId == null || !jwtUtils.isAdmin(httpRequest)) {
+            return ResponseEntity.status(403).body("Accès refusé: administrateur requis");
         }
         var payload = administrateurService.listUsersWithStats(adminId);
         return ResponseEntity.ok(payload);
@@ -40,10 +36,10 @@ public class AdministrateurController {
 
     // Obtenir les statistiques système (admin connecté)
     @GetMapping("/stats")
-    public ResponseEntity<SystemStatsDTO> getSystemStats(HttpServletRequest httpRequest) {
+    public ResponseEntity<?> getSystemStats(HttpServletRequest httpRequest) {
         Long adminId = jwtUtils.getUserIdFromToken(httpRequest);
-        if (adminId == null) {
-            return ResponseEntity.badRequest().build();
+        if (adminId == null || !jwtUtils.isAdmin(httpRequest)) {
+            return ResponseEntity.status(403).body("Accès refusé: administrateur requis");
         }
         var stats = administrateurService.getSystemStats(adminId);
         return ResponseEntity.ok(stats);
@@ -51,10 +47,10 @@ public class AdministrateurController {
 
     // Lister les missions avec statistiques (admin connecté)
     @GetMapping("/missions")
-    public ResponseEntity<AdminMissionsWithStatsResponse> listMissionsWithStats(HttpServletRequest httpRequest) {
+    public ResponseEntity<?> listMissionsWithStats(HttpServletRequest httpRequest) {
         Long adminId = jwtUtils.getUserIdFromToken(httpRequest);
-        if (adminId == null) {
-            return ResponseEntity.badRequest().build();
+        if (adminId == null || !jwtUtils.isAdmin(httpRequest)) {
+            return ResponseEntity.status(403).body("Accès refusé: administrateur requis");
         }
         var payload = administrateurService.listMissionsWithStats();
         return ResponseEntity.ok(payload);
@@ -62,10 +58,10 @@ public class AdministrateurController {
 
     // Lister les paiements avec statistiques (admin connecté)
     @GetMapping("/paiements")
-    public ResponseEntity<AdminPaiementsWithStatsResponse> listPaiementsWithStats(HttpServletRequest httpRequest) {
+    public ResponseEntity<?> listPaiementsWithStats(HttpServletRequest httpRequest) {
         Long adminId = jwtUtils.getUserIdFromToken(httpRequest);
-        if (adminId == null) {
-            return ResponseEntity.badRequest().build();
+        if (adminId == null || !jwtUtils.isAdmin(httpRequest)) {
+            return ResponseEntity.status(403).body("Accès refusé: administrateur requis");
         }
         var payload = administrateurService.listPaiementsWithStats();
         return ResponseEntity.ok(payload);
@@ -75,8 +71,8 @@ public class AdministrateurController {
     @PostMapping("/utilisateurs/{userId}/bloquer")
     public ResponseEntity<?> blockUser(HttpServletRequest httpRequest, @PathVariable Long userId) {
         Long adminId = jwtUtils.getUserIdFromToken(httpRequest);
-        if (adminId == null) {
-            return ResponseEntity.badRequest().body("Token manquant ou invalide");
+        if (adminId == null || !jwtUtils.isAdmin(httpRequest)) {
+            return ResponseEntity.status(403).body("Accès refusé: administrateur requis");
         }
         administrateurService.setUserStatut(userId, StatutUtilisateur.DESACTIVER);
         return ResponseEntity.ok("Utilisateur bloquer avec succes");
@@ -86,8 +82,8 @@ public class AdministrateurController {
     @PostMapping("/utilisateurs/{userId}/debloquer")
     public ResponseEntity<?> unblockUser(HttpServletRequest httpRequest, @PathVariable Long userId) {
         Long adminId = jwtUtils.getUserIdFromToken(httpRequest);
-        if (adminId == null) {
-            return ResponseEntity.badRequest().body("Token manquant ou invalide");
+        if (adminId == null || !jwtUtils.isAdmin(httpRequest)) {
+            return ResponseEntity.status(403).body("Accès refusé: administrateur requis");
         }
         administrateurService.setUserStatut(userId, StatutUtilisateur.ACTIVER);
         return ResponseEntity.ok("Utilisateur debloquer avec succes");
