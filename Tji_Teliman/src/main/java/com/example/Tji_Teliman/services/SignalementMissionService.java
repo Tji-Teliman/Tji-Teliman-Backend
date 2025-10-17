@@ -4,7 +4,7 @@ import com.example.Tji_Teliman.dto.SignalementMissionDTO;
 import com.example.Tji_Teliman.entites.JeunePrestateur;
 import com.example.Tji_Teliman.entites.Mission;
 import com.example.Tji_Teliman.entites.SignalementMission;
-import com.example.Tji_Teliman.entites.enums.StatutSignalement;
+import com.example.Tji_Teliman.entites.enums.TypeSignalement;
 import com.example.Tji_Teliman.repository.JeunePrestateurRepository;
 import com.example.Tji_Teliman.repository.MissionRepository;
 import com.example.Tji_Teliman.repository.SignalementMissionRepository;
@@ -26,17 +26,21 @@ public class SignalementMissionService {
     }
 
     @Transactional
-    public SignalementMission create(Long missionId, Long jeuneId, String motif, String description, String pieceJointe) {
+    public SignalementMission create(Long missionId, Long jeuneId, TypeSignalement type, String description) {
         Mission mission = missionRepository.findById(missionId).orElseThrow(() -> new IllegalArgumentException("Mission introuvable"));
         JeunePrestateur jeune = jeuneRepository.findById(jeuneId).orElseThrow(() -> new IllegalArgumentException("Jeune introuvable"));
+
+        // Empêcher les signalements en doublon pour la même mission par le même jeune
+        var dejaSignales = repo.findByMissionAndJeunePrestateur(mission, jeune);
+        if (dejaSignales != null && !dejaSignales.isEmpty()) {
+            throw new IllegalArgumentException("Vous avez déjà signalé cette mission");
+        }
 
         SignalementMission s = new SignalementMission();
         s.setMission(mission);
         s.setJeunePrestateur(jeune);
-        s.setMotif(motif);
+        s.setType(type);
         s.setDescription(description);
-        s.setPieceJointe(pieceJointe);
-        s.setStatut(StatutSignalement.OUVERT);
 
         return repo.save(s);
     }
@@ -50,22 +54,15 @@ public class SignalementMissionService {
     @Transactional(readOnly = true)
     public List<SignalementMission> listAll() { return repo.findAll(); }
 
-    @Transactional
-    public SignalementMission updateStatut(Long id, StatutSignalement statut) {
-        SignalementMission s = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Signalement introuvable"));
-        s.setStatut(statut);
-        return repo.save(s);
-    }
+    // Suppression de la gestion de statut
 
     @Transactional(readOnly = true)
     public SignalementMissionDTO toDTO(SignalementMission s) {
         SignalementMissionDTO dto = new SignalementMissionDTO();
         dto.setId(s.getId());
-        dto.setMotif(s.getMotif());
+        dto.setMotif(s.getType() == null ? null : s.getType().name());
         dto.setDescription(s.getDescription());
-        dto.setStatut(s.getStatut() == null ? null : s.getStatut().name());
         dto.setDateCreation(s.getDateCreation());
-        dto.setPieceJointe(s.getPieceJointe());
         if (s.getMission() != null) {
             dto.setMissionId(s.getMission().getId());
             dto.setMissionTitre(s.getMission().getTitre());

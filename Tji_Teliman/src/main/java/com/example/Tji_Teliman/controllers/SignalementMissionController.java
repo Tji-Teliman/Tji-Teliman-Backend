@@ -1,16 +1,15 @@
 package com.example.Tji_Teliman.controllers;
 
-import com.example.Tji_Teliman.config.JwtService;
+import com.example.Tji_Teliman.config.JwtUtils;
 import com.example.Tji_Teliman.dto.SignalementMissionDTO;
-import com.example.Tji_Teliman.entites.enums.StatutSignalement;
+import com.example.Tji_Teliman.entites.enums.TypeSignalement;
 import com.example.Tji_Teliman.services.SignalementMissionService;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,34 +18,34 @@ import org.springframework.web.bind.annotation.RestController;
 public class SignalementMissionController {
 
     private final SignalementMissionService signalementService;
-    private final JwtService jwtService;
+    private final JwtUtils jwtUtils;
 
-    public SignalementMissionController(SignalementMissionService signalementService, JwtService jwtService) {
+    public SignalementMissionController(SignalementMissionService signalementService, JwtUtils jwtUtils) {
         this.signalementService = signalementService;
-        this.jwtService = jwtService;
+        this.jwtUtils = jwtUtils;
     }
 
     public record ApiResponse(boolean success, String message, Object data) {}
 
-    // Endpoint côté jeune pour signaler une mission
-    @PostMapping("/missions/{missionId}")
+    public record SignalerRequest(TypeSignalement type, String description) {}
+
+    // Signaler une mission (jeune connecté) en précisant un type et une description
+    @PostMapping(value = "/missions/{missionId}")
     public ResponseEntity<?> signalerMission(
         @PathVariable Long missionId,
-        @RequestHeader(value = "Authorization", required = false) String authorization,
-        @RequestParam String motif,
-        @RequestParam(required = false) String description,
-        @RequestParam(required = false) String pieceJointe
+        HttpServletRequest httpRequest,
+        @org.springframework.web.bind.annotation.RequestBody SignalerRequest request
     ) {
         try {
-            if (authorization == null || !authorization.startsWith("Bearer ")) {
-                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant", null));
-            }
-            String token = authorization.substring(7);
-            Long jeuneId = jwtService.parseUserId(token);
+            Long jeuneId = jwtUtils.getUserIdFromToken(httpRequest);
             if (jeuneId == null) {
-                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token invalide", null));
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
             }
-            var saved = signalementService.create(missionId, jeuneId, motif, description, pieceJointe);
+            if (request == null || request.type == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Type de signalement requis", null));
+            }
+            var saved = signalementService.create(missionId, jeuneId, request.type, request.description);
+            // Retourner un DTO léger pour éviter la sérialisation profonde de l'entité
             SignalementMissionDTO dto = signalementService.toDTO(saved);
             return ResponseEntity.ok(new ApiResponse(true, "Signalement enregistré", dto));
         } catch (IllegalArgumentException ex) {
@@ -61,16 +60,7 @@ public class SignalementMissionController {
         return ResponseEntity.ok(list);
     }
 
-    // Endpoint admin: changer le statut d'un signalement
-    @PostMapping("/admin/{id}/statut")
-    public ResponseEntity<?> updateStatut(@PathVariable Long id, @RequestParam StatutSignalement statut) {
-        try {
-            var updated = signalementService.updateStatut(id, statut);
-            return ResponseEntity.ok(new ApiResponse(true, "Statut mis à jour", signalementService.toDTO(updated)));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
-        }
-    }
+    // Suppression de l'endpoint de mise à jour de statut (non géré pour l'instant)
 }
 
 

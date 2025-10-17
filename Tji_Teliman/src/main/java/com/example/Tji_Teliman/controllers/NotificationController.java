@@ -32,6 +32,7 @@ public class NotificationController {
 
     public record ApiResponse(boolean success, String message, Object data) {}
 
+    // Lister les notifications de l'utilisateur connecté (et les marquer lues)
     @GetMapping("/mes-notifications")
     public ResponseEntity<?> listByUtilisateur(HttpServletRequest httpRequest) {
         try {
@@ -57,6 +58,7 @@ public class NotificationController {
         }
     }
 
+    // Marquer une notification comme lue
     @PutMapping("/{notificationId}/lue")
     public ResponseEntity<?> markAsRead(@PathVariable Long notificationId) {
         Notification n = notificationRepository.findById(notificationId).orElseThrow(() -> new IllegalArgumentException("Notification introuvable"));
@@ -65,6 +67,7 @@ public class NotificationController {
         return ResponseEntity.ok(new ApiResponse(true, "Notification marquée comme lue", toDTO(n)));
     }
 
+    // Supprimer une notification
     @DeleteMapping("/{notificationId}")
     public ResponseEntity<?> delete(@PathVariable Long notificationId) {
         if (!notificationRepository.existsById(notificationId)) {

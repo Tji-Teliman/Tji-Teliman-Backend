@@ -30,6 +30,7 @@ public class CandidatureController {
 
     public record ApiResponse(boolean success, String message, Object data) {}
 
+    // Postuler à une mission (jeune connecté) avec un message de motivation
     @PostMapping("/mission/{missionId}")
     public ResponseEntity<?> postuler(
             @PathVariable Long missionId,
@@ -47,6 +48,7 @@ public class CandidatureController {
         }
     }
 
+    // Récupérer les candidatures du jeune connecté
     @GetMapping("/mes-candidatures")
     public ResponseEntity<?> getCandidaturesByJeune(HttpServletRequest httpRequest) {
         try {
@@ -61,16 +63,19 @@ public class CandidatureController {
         }
     }
 
+    // Lister les candidatures d'une mission donnée
     @GetMapping("/mission/{missionId}")
     public ResponseEntity<List<CandidatureDTO>> getCandidaturesByMission(@PathVariable Long missionId) {
         return ResponseEntity.ok(candidatureService.getCandidaturesByMission(missionId));
     }
 
+    // Lister les motivations soumises pour une mission
     @GetMapping("/mission/{missionId}/motivations")
     public ResponseEntity<List<MotivationDTO>> getMotivationsByMission(@PathVariable Long missionId) {
         return ResponseEntity.ok(candidatureService.getMotivationsByMission(missionId));
     }
 
+    // Lister les candidatures acceptées (inclut le nombre)
     @GetMapping("/acceptees")
     public ResponseEntity<?> getCandidaturesAcceptees() {
         List<CandidatureDTO> liste = candidatureService.getCandidaturesAcceptees();
@@ -80,6 +85,7 @@ public class CandidatureController {
         return ResponseEntity.ok(new ApiResponse(true, "Candidatures acceptées", data));
     }
 
+    // Lister les candidatures refusées (inclut le nombre)
     @GetMapping("/refusees")
     public ResponseEntity<?> getCandidaturesRefusees() {
         List<CandidatureDTO> liste = candidatureService.getCandidaturesRefusees();
@@ -89,12 +95,14 @@ public class CandidatureController {
         return ResponseEntity.ok(new ApiResponse(true, "Candidatures refusées", data));
     }
 
+    // Obtenir les statistiques des candidatures (acceptées vs refusées)
     @GetMapping("/stats")
     public ResponseEntity<?> getStatsCandidatures() {
         var counts = candidatureService.getCountsAccepteesEtRefusees();
         return ResponseEntity.ok(new ApiResponse(true, "Statistiques candidatures", counts));
     }
 
+    // Valider une candidature (recruteur connecté)
     @PutMapping("/{candidatureId}/valider")
     public ResponseEntity<?> validerCandidature(
             @PathVariable Long candidatureId,
@@ -111,6 +119,7 @@ public class CandidatureController {
         }
     }
 
+    // Rejeter une candidature (recruteur connecté)
     @PutMapping("/{candidatureId}/rejeter")
     public ResponseEntity<?> rejeterCandidature(
             @PathVariable Long candidatureId,
@@ -127,6 +136,7 @@ public class CandidatureController {
         }
     }
 
+    // Obtenir le profil détaillé d'une candidature
     @GetMapping("/{candidatureId}/profil")
     public ResponseEntity<?> getProfilCandidature(@PathVariable Long candidatureId) {
         try {

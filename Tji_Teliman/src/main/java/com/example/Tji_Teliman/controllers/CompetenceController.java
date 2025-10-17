@@ -30,6 +30,7 @@ public class CompetenceController {
     public record CreateCompetenceRequest(String nom) {}
     public record ApiResponse(boolean success, String message, Object data) {}
 
+    // Créer une compétence (admin)
     @PostMapping
     public ResponseEntity<?> create(@RequestBody CreateCompetenceRequest req, HttpServletRequest httpRequest) {
         try {
@@ -44,11 +45,13 @@ public class CompetenceController {
         }
     }
 
+    // Lister toutes les compétences
     @GetMapping
     public ResponseEntity<List<Competence>> list() {
         return ResponseEntity.ok(competenceService.listAll());
     }
 
+    // Mettre à jour une compétence (admin)
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody CreateCompetenceRequest req, HttpServletRequest httpRequest) {
         try {
@@ -63,6 +66,7 @@ public class CompetenceController {
         }
     }
 
+    // Supprimer une compétence (admin)
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id, HttpServletRequest httpRequest) {
         try {

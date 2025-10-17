@@ -42,7 +42,7 @@ public class MessageController {
     
     public record MessageTexteRequest(String contenu) {}
 
-    // Envoi d'un message vocal (unifié pour recruteur et jeune)
+    // Envoyer un message vocal (unifié pour recruteur et jeune)
     @PostMapping("/vocal/{destinataireId}")
     public ResponseEntity<?> envoyerMessageVocal(
             @PathVariable Long destinataireId,
@@ -89,7 +89,7 @@ public class MessageController {
         }
     }
 
-    // Envoi d'un message texte (unifié pour recruteur et jeune)
+    // Envoyer un message texte (unifié pour recruteur et jeune)
     @PostMapping("/texte/{destinataireId}")
     public ResponseEntity<?> envoyerMessageTexte(
             @PathVariable Long destinataireId,
@@ -159,7 +159,7 @@ public class MessageController {
         }
     }
 
-    // 🔵 Lister toutes les conversations d'un utilisateur
+    // Lister toutes les conversations de l'utilisateur connecté
     @GetMapping("/conversations")
     public ResponseEntity<?> getConversations(HttpServletRequest httpRequest) {
         try {
@@ -176,7 +176,7 @@ public class MessageController {
         }
     }
 
-    // 🔵 Supprimer un message
+    // Supprimer un message
     @DeleteMapping("/{messageId}")
     public ResponseEntity<?> supprimerMessage(
             @PathVariable Long messageId,
@@ -195,7 +195,7 @@ public class MessageController {
         }
     }
 
-    // 🔵 Obtenir un message par ID
+    // Obtenir un message par son ID
     @GetMapping("/{messageId}")
     public ResponseEntity<?> getMessageById(
             @PathVariable Long messageId,
@@ -214,7 +214,7 @@ public class MessageController {
         }
     }
 
-    // 🔵 Servir les fichiers audio
+    // Servir un fichier audio de message vocal
     @GetMapping("/audio/{filename}")
     public ResponseEntity<Resource> getAudioFile(@PathVariable String filename) {
         try {

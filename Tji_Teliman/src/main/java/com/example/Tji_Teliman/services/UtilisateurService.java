@@ -43,11 +43,27 @@ public class UtilisateurService {
             throw new IllegalArgumentException("Champs requis manquants");
         }
 
-        if (req.email != null && !req.email.trim().isEmpty() && utilisateurRepository.existsByEmail(req.email)) {
+        // Validation: téléphone au moins 8 chiffres
+        if (req.telephone == null || !req.telephone.matches("^\\d{8,}$")) {
+            throw new IllegalArgumentException("Le numéro de téléphone doit contenir au moins 8 chiffres");
+        }
+
+        // Validation: email doit contenir @gmail.com si fourni
+        if (req.email != null && !req.email.trim().isEmpty()) {
+            if (!req.email.toLowerCase().endsWith("@gmail.com")) {
+                throw new IllegalArgumentException("L'adresse email incorrect");
+            }
+            if (utilisateurRepository.existsByEmail(req.email)) {
             throw new IllegalArgumentException("Email déjà utilisé");
+            }
         }
         if (utilisateurRepository.existsByTelephone(req.telephone)) {
             throw new IllegalArgumentException("Téléphone déjà utilisé");
+        }
+
+        // Validation: mot de passe fort (min 8, 1 maj, 1 min, 1 chiffre, 1 spécial)
+        if (!isStrongPassword(req.motDePasse)) {
+            throw new IllegalArgumentException("Le mot de passe doit contenir au minimum 8 caractères, avec au moins une lettre majuscule, une lettre minuscule, un chiffre et un caractère spécial");
         }
 
         Role roleEnum;
@@ -94,6 +110,11 @@ public class UtilisateurService {
 
     private boolean isBlank(String s) { return s == null || s.trim().isEmpty(); }
     private String emptyToNull(String s) { return (s == null || s.trim().isEmpty()) ? null : s; }
+    private boolean isStrongPassword(String s) {
+        if (s == null) return false;
+        // At least 8 chars, 1 upper, 1 lower, 1 digit, 1 special
+        return s.matches("^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$");
+    }
 
     @Transactional(readOnly = true)
     public Object authenticate(String telephone, String motDePasse) {
@@ -102,16 +123,39 @@ public class UtilisateurService {
         }
         var userOpt = utilisateurRepository.findByTelephone(telephone);
         if (userOpt.isEmpty()) {
-            throw new IllegalArgumentException("Utilisateur introuvable");
+            throw new IllegalArgumentException("Telephone ou mot de passe incorrect");
         }
         var user = userOpt.get();
         if (user.getStatut() == StatutUtilisateur.DESACTIVER) {
             throw new IllegalArgumentException("Compte désactivé");
         }
         if (!passwordEncoder.matches(motDePasse, user.getMotDePasse())) {
-            throw new IllegalArgumentException("Mot de passe invalide");
+            throw new IllegalArgumentException("Telephone ou Mot de Passe incorrect");
         }
         // Retourner un payload sans motDePasse + token
+        String token = jwtService.generateToken(user.getId(), user.getTelephone(), user.getRole().name());
+        return new LoginResponse(new AuthResponse(user.getId(), user.getNom(), user.getPrenom(), user.getTelephone(), user.getEmail(), user.getRole().name(), user.getGenre().name()), token);
+    }
+
+    @Transactional(readOnly = true)
+    public Object authenticateAdminByEmail(String email, String motDePasse) {
+        if (isBlank(email) || isBlank(motDePasse)) {
+            throw new IllegalArgumentException("Email et motDePasse requis");
+        }
+        var userOpt = utilisateurRepository.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            throw new IllegalArgumentException("Administrateur introuvable");
+        }
+        var user = userOpt.get();
+        if (user.getRole() != Role.ADMINISTRATEUR) {
+            throw new IllegalArgumentException("Accès refusé: non administrateur");
+        }
+        if (user.getStatut() == StatutUtilisateur.DESACTIVER) {
+            throw new IllegalArgumentException("Compte désactivé");
+        }
+        if (!passwordEncoder.matches(motDePasse, user.getMotDePasse())) {
+            throw new IllegalArgumentException("Mot de passe invalide");
+        }
         String token = jwtService.generateToken(user.getId(), user.getTelephone(), user.getRole().name());
         return new LoginResponse(new AuthResponse(user.getId(), user.getNom(), user.getPrenom(), user.getTelephone(), user.getEmail(), user.getRole().name(), user.getGenre().name()), token);
     }
@@ -139,9 +183,9 @@ public class UtilisateurService {
             throw new IllegalArgumentException("Le nouveau mot de passe doit être différent de l'ancien");
         }
 
-        // Validation de la force du mot de passe (minimum 6 caractères)
-        if (nouveauMotDePasse.length() < 6) {
-            throw new IllegalArgumentException("Le nouveau mot de passe doit contenir au moins 6 caractères");
+        // Validation de la force du mot de passe (min 8, 1 maj, 1 min, 1 chiffre, 1 spécial)
+        if (!isStrongPassword(nouveauMotDePasse)) {
+            throw new IllegalArgumentException("Le mot de passe doit contenir au minimum 8 caractères, avec au moins une lettre majuscule, une lettre minuscule, un chiffre et un caractère spécial");
         }
 
         // Récupérer l'utilisateur

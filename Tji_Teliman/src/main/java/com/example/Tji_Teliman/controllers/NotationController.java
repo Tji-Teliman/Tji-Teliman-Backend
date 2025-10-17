@@ -35,6 +35,7 @@ public class NotationController {
      * Noter un jeune prestataire par le recruteur
      * Se déclenche automatiquement après un paiement
      */
+    // Noter un jeune (par le recruteur) pour une candidature donnée
     @PostMapping("/recruteur-noter-jeune/{candidatureId}")
     public ResponseEntity<?> noterJeuneParRecruteur(@PathVariable Long candidatureId, @RequestBody NoterJeuneRequest req) {
         try {
@@ -50,6 +51,7 @@ public class NotationController {
      * Noter un recruteur par le jeune prestataire
      * Peut être effectuée après que le recruteur ait noté le jeune
      */
+    // Noter un recruteur (par le jeune) pour une candidature donnée
     @PostMapping("/jeune-noter-recruteur/{candidatureId}")
     public ResponseEntity<?> noterRecruteurParJeune(@PathVariable Long candidatureId, @RequestBody NoterRecruteurRequest req) {
         try {
@@ -61,6 +63,7 @@ public class NotationController {
         }
     }
 
+    // Lister toutes les notations
     @GetMapping("/all")
     public ResponseEntity<List<NotationDTO>> getAllNotations() {
         List<NotationDTO> notations = notationService.getAllNotations().stream()
@@ -69,6 +72,7 @@ public class NotationController {
         return ResponseEntity.ok(notations);
     }
 
+    // Obtenir une notation par son ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getNotationById(@PathVariable Long id) {
         Optional<Notation> notation = notationService.getNotationById(id);
@@ -80,6 +84,7 @@ public class NotationController {
         }
     }
 
+    // Lister les notations liées à une candidature
     @GetMapping("/candidature/{candidatureId}")
     public ResponseEntity<?> getNotationsByCandidature(@PathVariable Long candidatureId) {
         List<NotationDTO> notations = notationService.getNotationsByCandidature(candidatureId).stream()
@@ -88,6 +93,7 @@ public class NotationController {
         return ResponseEntity.ok(new ApiResponse(true, "Notations trouvées", notations));
     }
 
+    // Obtenir la notation du recruteur pour une candidature donnée
     @GetMapping("/candidature/{candidatureId}/recruteur")
     public ResponseEntity<?> getNotationRecruteurByCandidature(@PathVariable Long candidatureId) {
         Optional<Notation> notation = notationService.getNotationRecruteurByCandidature(candidatureId);
@@ -99,6 +105,7 @@ public class NotationController {
         }
     }
 
+    // Obtenir la notation du jeune pour une candidature donnée
     @GetMapping("/candidature/{candidatureId}/jeune")
     public ResponseEntity<?> getNotationJeuneByCandidature(@PathVariable Long candidatureId) {
         Optional<Notation> notation = notationService.getNotationJeuneByCandidature(candidatureId);
@@ -110,6 +117,7 @@ public class NotationController {
         }
     }
 
+    // Lister les notations du recruteur connecté
     @GetMapping("/mes-notations-recruteur")
     public ResponseEntity<?> getNotationsByRecruteur(HttpServletRequest httpRequest) {
         try {
@@ -126,6 +134,7 @@ public class NotationController {
         }
     }
 
+    // Lister les notations du jeune prestataire connecté
     @GetMapping("/mes-notations")
     public ResponseEntity<?> getNotationsByJeunePrestateur(HttpServletRequest httpRequest) {
         try {
@@ -142,6 +151,7 @@ public class NotationController {
         }
     }
 
+    // Lister les notations reçues par l'utilisateur connecté
     @GetMapping("/mes-notations-recues")
     public ResponseEntity<?> getNotationsRecuesParUtilisateur(HttpServletRequest httpRequest) {
         try {
@@ -158,6 +168,7 @@ public class NotationController {
         }
     }
 
+    // Obtenir la moyenne des notes de l'utilisateur connecté
     @GetMapping("/moyenne")
     public ResponseEntity<?> getMoyenneNotesUtilisateur(HttpServletRequest httpRequest) {
         try {
