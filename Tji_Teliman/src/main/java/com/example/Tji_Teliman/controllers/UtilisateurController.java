@@ -32,6 +32,28 @@ public class UtilisateurController {
         public String typeRecruteur; // requis si role=RECRUTEUR: ENTREPRISE | PARTICULIER
     }
 
+    // Nouveaux modèles d'inscription dédiés (sans champ role)
+    public static class JeuneRegistrationRequest {
+        public String nom;
+        public String prenom;
+        public String email; // facultatif
+        public String motDePasse;
+        public String confirmationMotDePasse; // pour validation côté backend
+        public String telephone;
+        public String genre;  // MASCULIN | FEMININ
+    }
+
+    public static class RecruteurRegistrationRequest {
+        public String nom;
+        public String prenom;
+        public String email; // facultatif
+        public String motDePasse;
+        public String confirmationMotDePasse; // pour validation côté backend
+        public String telephone;
+        public String genre;  // MASCULIN | FEMININ
+        public String typeRecruteur; // ENTREPRISE | PARTICULIER
+    }
+
     public record ApiResponse(boolean success, String message, Object data) {}
 
     // Inscription utilisateur avec validations (téléphone, email gmail, mot de passe fort)
@@ -39,6 +61,32 @@ public class UtilisateurController {
     public ResponseEntity<?> register(@RequestBody UserRegistrationRequest req) {
         try {
             Object created = utilisateurService.register(req);
+            return ResponseEntity.ok(new ApiResponse(true, "Inscription reussie", created));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().body(new ApiResponse(false, "Inscription non reussie: " + ex.getMessage(), null));
+        }
+    }
+
+    // Nouvelle inscription JEUNE (role implicite)
+    @PostMapping("/register/jeune")
+    public ResponseEntity<?> registerJeune(@RequestBody JeuneRegistrationRequest req) {
+        try {
+            Object created = utilisateurService.registerJeune(req);
+            return ResponseEntity.ok(new ApiResponse(true, "Inscription reussie", created));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().body(new ApiResponse(false, "Inscription non reussie: " + ex.getMessage(), null));
+        }
+    }
+
+    // Nouvelle inscription RECRUTEUR (role implicite + typeRecruteur requis)
+    @PostMapping("/register/recruteur")
+    public ResponseEntity<?> registerRecruteur(@RequestBody RecruteurRegistrationRequest req) {
+        try {
+            Object created = utilisateurService.registerRecruteur(req);
             return ResponseEntity.ok(new ApiResponse(true, "Inscription reussie", created));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
