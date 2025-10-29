@@ -1,6 +1,8 @@
 package com.example.Tji_Teliman.services;
 
 import com.example.Tji_Teliman.controllers.UtilisateurController.UserRegistrationRequest;
+import com.example.Tji_Teliman.controllers.UtilisateurController.JeuneRegistrationRequest;
+import com.example.Tji_Teliman.controllers.UtilisateurController.RecruteurRegistrationRequest;
 import com.example.Tji_Teliman.entites.JeunePrestateur;
 import com.example.Tji_Teliman.entites.Recruteur;
 import com.example.Tji_Teliman.entites.enums.Role;
@@ -106,6 +108,110 @@ public class UtilisateurService {
         } else {
             throw new IllegalArgumentException("Role non supporté pour inscription");
         }
+    }
+
+    // Inscription JEUNE avec role implicite
+    @Transactional
+    public Object registerJeune(JeuneRegistrationRequest req) {
+        if (isBlank(req.nom) || isBlank(req.prenom) || isBlank(req.motDePasse)
+            || isBlank(req.confirmationMotDePasse) || isBlank(req.telephone) || isBlank(req.genre)) {
+            throw new IllegalArgumentException("Champs requis manquants");
+        }
+
+        // Validation: confirmation du mot de passe
+        if (!req.motDePasse.equals(req.confirmationMotDePasse)) {
+            throw new IllegalArgumentException("Le mot de passe et la confirmation ne correspondent pas");
+        }
+
+        if (req.telephone == null || !req.telephone.matches("^\\d{8,}$")) {
+            throw new IllegalArgumentException("Le numéro de téléphone doit contenir au moins 8 chiffres");
+        }
+
+        if (req.email != null && !req.email.trim().isEmpty()) {
+            if (!req.email.toLowerCase().endsWith("@gmail.com")) {
+                throw new IllegalArgumentException("L'adresse email incorrect");
+            }
+            if (utilisateurRepository.existsByEmail(req.email)) {
+                throw new IllegalArgumentException("Email déjà utilisé");
+            }
+        }
+        if (utilisateurRepository.existsByTelephone(req.telephone)) {
+            throw new IllegalArgumentException("Téléphone déjà utilisé");
+        }
+
+        if (!isStrongPassword(req.motDePasse)) {
+            throw new IllegalArgumentException("Le mot de passe doit contenir au minimum 8 caractères, avec au moins une lettre majuscule, une lettre minuscule, un chiffre et un caractère spécial");
+        }
+
+        TypeGenre genreEnum;
+        try { genreEnum = TypeGenre.valueOf(req.genre); } catch (Exception e) { throw new IllegalArgumentException("Genre invalide"); }
+
+        JeunePrestateur j = new JeunePrestateur();
+        j.setNom(req.nom);
+        j.setPrenom(req.prenom);
+        j.setEmail(emptyToNull(req.email));
+        j.setMotDePasse(passwordEncoder.encode(req.motDePasse));
+        j.setTelephone(req.telephone);
+        j.setGenre(genreEnum);
+        j.setRole(Role.JEUNE_PRESTATEUR);
+        var saved = jeuneRepo.save(j);
+        String token = jwtService.generateToken(saved.getId(), saved.getTelephone(), saved.getRole().name());
+        var user = new AuthResponse(saved.getId(), saved.getNom(), saved.getPrenom(), saved.getTelephone(), saved.getEmail(), saved.getRole().name(), saved.getGenre().name());
+        return new LoginResponse(user, token);
+    }
+
+    // Inscription RECRUTEUR avec role implicite et typeRecruteur requis
+    @Transactional
+    public Object registerRecruteur(RecruteurRegistrationRequest req) {
+        if (isBlank(req.nom) || isBlank(req.prenom) || isBlank(req.motDePasse)
+            || isBlank(req.confirmationMotDePasse) || isBlank(req.telephone) || isBlank(req.genre) || isBlank(req.typeRecruteur)) {
+            throw new IllegalArgumentException("Champs requis manquants");
+        }
+
+        // Validation: confirmation du mot de passe
+        if (!req.motDePasse.equals(req.confirmationMotDePasse)) {
+            throw new IllegalArgumentException("Le mot de passe et la confirmation ne correspondent pas");
+        }
+
+        if (req.telephone == null || !req.telephone.matches("^\\d{8,}$")) {
+            throw new IllegalArgumentException("Le numéro de téléphone doit contenir au moins 8 chiffres");
+        }
+
+        if (req.email != null && !req.email.trim().isEmpty()) {
+            if (!req.email.toLowerCase().endsWith("@gmail.com")) {
+                throw new IllegalArgumentException("L'adresse email incorrect");
+            }
+            if (utilisateurRepository.existsByEmail(req.email)) {
+                throw new IllegalArgumentException("Email déjà utilisé");
+            }
+        }
+        if (utilisateurRepository.existsByTelephone(req.telephone)) {
+            throw new IllegalArgumentException("Téléphone déjà utilisé");
+        }
+
+        if (!isStrongPassword(req.motDePasse)) {
+            throw new IllegalArgumentException("Le mot de passe doit contenir au minimum 8 caractères, avec au moins une lettre majuscule, une lettre minuscule, un chiffre et un caractère spécial");
+        }
+
+        TypeGenre genreEnum;
+        try { genreEnum = TypeGenre.valueOf(req.genre); } catch (Exception e) { throw new IllegalArgumentException("Genre invalide"); }
+
+        TypeRecruteur tr;
+        try { tr = TypeRecruteur.valueOf(req.typeRecruteur); } catch (Exception e) { throw new IllegalArgumentException("typeRecruteur invalide"); }
+
+        Recruteur r = new Recruteur();
+        r.setNom(req.nom);
+        r.setPrenom(req.prenom);
+        r.setEmail(emptyToNull(req.email));
+        r.setMotDePasse(passwordEncoder.encode(req.motDePasse));
+        r.setTelephone(req.telephone);
+        r.setGenre(genreEnum);
+        r.setRole(Role.RECRUTEUR);
+        r.setTypeRecruteur(tr);
+        var saved = recruteurRepo.save(r);
+        String token = jwtService.generateToken(saved.getId(), saved.getTelephone(), saved.getRole().name());
+        var user = new AuthResponse(saved.getId(), saved.getNom(), saved.getPrenom(), saved.getTelephone(), saved.getEmail(), saved.getRole().name(), saved.getGenre().name());
+        return new LoginResponse(user, token);
     }
 
     private boolean isBlank(String s) { return s == null || s.trim().isEmpty(); }
