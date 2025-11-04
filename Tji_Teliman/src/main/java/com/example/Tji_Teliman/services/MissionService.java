@@ -23,14 +23,16 @@ public class MissionService {
     private final CandidatureRepository candidatureRepository;
     private final NotificationService notificationService;
     private final GoogleMapsService googleMapsService;
+    private final NotationService notationService;
 
-    public MissionService(MissionRepository missionRepository, RecruteurRepository recruteurRepository, CategorieRepository categorieRepository, CandidatureRepository candidatureRepository, NotificationService notificationService, GoogleMapsService googleMapsService) {
+    public MissionService(MissionRepository missionRepository, RecruteurRepository recruteurRepository, CategorieRepository categorieRepository, CandidatureRepository candidatureRepository, NotificationService notificationService, GoogleMapsService googleMapsService, NotationService notationService) {
         this.missionRepository = missionRepository;
         this.recruteurRepository = recruteurRepository;
         this.categorieRepository = categorieRepository;
         this.candidatureRepository = candidatureRepository;
         this.notificationService = notificationService;
         this.googleMapsService = googleMapsService;
+        this.notationService = notationService;
     }
 
     @Transactional
@@ -156,6 +158,18 @@ public class MissionService {
         }
         // Compter le nombre de candidatures pour cette mission
         dto.setNombreCandidatures((long) candidatureRepository.findByMission(m).size());
+        
+        // Remplir les informations du recruteur
+        if (m.getRecruteur() != null) {
+            Recruteur recruteur = m.getRecruteur();
+            dto.setRecruteurNom(recruteur.getNom());
+            dto.setRecruteurPrenom(recruteur.getPrenom());
+            dto.setRecruteurUrlPhoto(recruteur.getUrlPhoto());
+            // Obtenir la note moyenne du recruteur
+            Double moyenneNote = notationService.getMoyenneNotesRecruteur(recruteur.getId());
+            dto.setRecruteurNote(moyenneNote);
+        }
+        
         return dto;
     }
 
