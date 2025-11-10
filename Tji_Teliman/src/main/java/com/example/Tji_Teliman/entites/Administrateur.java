@@ -1,6 +1,7 @@
 package com.example.Tji_Teliman.entites;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Table;
 import jakarta.persistence.OneToMany;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -8,6 +9,9 @@ import lombok.Getter;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -23,4 +27,12 @@ public class Administrateur extends Utilisateur {
     @OneToMany(mappedBy = "administrateur")
     @JsonIgnore
     private java.util.Set<Competence> competences;
+
+    @OneToMany(mappedBy = "administrateur", fetch = FetchType.LAZY)
+    private List<Litige> litigesTraites = new ArrayList<>();
+
+    public List<Litige> getLitigesTraites() { return litigesTraites; }
+    public void setLitigesTraites(List<Litige> litigesTraites) {
+        this.litigesTraites = litigesTraites;
+    }
 }

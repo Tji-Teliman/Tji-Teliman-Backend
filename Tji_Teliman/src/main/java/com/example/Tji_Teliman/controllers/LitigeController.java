@@ -1,13 +1,14 @@
 package com.example.Tji_Teliman.controllers;
 
-
+import com.example.Tji_Teliman.config.SecurityUtils;
 import com.example.Tji_Teliman.dto.*;
-        import com.example.Tji_Teliman.services.LitigeService;
+import com.example.Tji_Teliman.services.LitigeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-        import java.util.List;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/litiges")
@@ -16,84 +17,91 @@ public class LitigeController {
     @Autowired
     private LitigeService litigeService;
 
-    //  Créer un litige
+    @Autowired
+    private SecurityUtils securityUtils;
+
+    // Créer un litige
     @PostMapping
     public ResponseEntity<LitigeDTO> creerLitige(@RequestBody CreationLitigeDTO dto) {
-        LitigeDTO litige = litigeService.creerLitige(dto);
+        Long userId = securityUtils.getCurrentUserId();
+        LitigeDTO litige = litigeService.creerLitige(dto, userId);
         return ResponseEntity.ok(litige);
     }
 
-    // - Tous les litiges
+    // Tous les litiges (pour l'utilisateur connecté)
     @GetMapping
     public ResponseEntity<List<LitigeDTO>> getTousLesLitiges() {
-        List<LitigeDTO> litiges = litigeService.getTousLesLitiges();
+        Long userId = securityUtils.getCurrentUserId();
+        List<LitigeDTO> litiges = litigeService.getTousLesLitiges(userId);
         return ResponseEntity.ok(litiges);
     }
 
-    //  Litiges par statut
+    // Litiges par statut (pour l'utilisateur connecté)
     @GetMapping("/statut/{statut}")
     public ResponseEntity<List<LitigeDTO>> getLitigesParStatut(@PathVariable String statut) {
-        List<LitigeDTO> litiges = litigeService.getLitigesParStatut(statut);
+        Long userId = securityUtils.getCurrentUserId();
+        List<LitigeDTO> litiges = litigeService.getLitigesParStatut(statut, userId);
         return ResponseEntity.ok(litiges);
     }
 
-    //  Litiges non assignés
+    // Litiges non assignés (admin seulement)
     @GetMapping("/non-assignes")
     public ResponseEntity<List<LitigeDTO>> getLitigesNonAssignes() {
+        String role = securityUtils.getCurrentUserRole();
+        if (!role.contains("ADMIN")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         List<LitigeDTO> litiges = litigeService.getLitigesNonAssignes();
         return ResponseEntity.ok(litiges);
     }
 
-    //  Assigner un litige à un administrateur
+    // Assigner un litige à l'admin connecté
     @PutMapping("/{id}/assigner")
-    public ResponseEntity<LitigeDTO> assignerLitige(
-            @PathVariable Long id,
-            @RequestBody AssignationLitigeDTO dto) {
-        LitigeDTO litige = litigeService.assignerLitige(id, dto.getAdministrateurId());
+    public ResponseEntity<LitigeDTO> assignerLitige(@PathVariable Long id) {
+        String role = securityUtils.getCurrentUserRole();
+        if (!role.contains("ADMIN")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        Long adminId = securityUtils.getCurrentUserId();
+        LitigeDTO litige = litigeService.assignerLitige(id, adminId);
         return ResponseEntity.ok(litige);
     }
 
-    //  Résoudre un litige
+    // Résoudre un litige
     @PutMapping("/{id}/resoudre")
     public ResponseEntity<LitigeDTO> resoudreLitige(
             @PathVariable Long id,
             @RequestBody ResolutionLitigeDTO dto) {
-        LitigeDTO litige = litigeService.resoudreLitige(id, dto);
+        String role = securityUtils.getCurrentUserRole();
+        if (!role.contains("ADMIN")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        Long adminId = securityUtils.getCurrentUserId();
+        LitigeDTO litige = litigeService.resoudreLitige(id, dto, adminId);
         return ResponseEntity.ok(litige);
     }
 
-    //  Litiges d'un jeune prestataire
-    @GetMapping("/jeune/{jeuneId}")
-    public ResponseEntity<List<LitigeDTO>> getLitigesParJeune(@PathVariable Long jeuneId) {
-        List<LitigeDTO> litiges = litigeService.getLitigesParJeunePrestateur(jeuneId);
+    // NOUVEAU : Mes litiges (utilise le token)
+    @GetMapping("/mes-litiges")
+    public ResponseEntity<List<LitigeDTO>> getMesLitiges() {
+        Long userId = securityUtils.getCurrentUserId();
+        List<LitigeDTO> litiges = litigeService.getLitigesParUtilisateur(userId);
         return ResponseEntity.ok(litiges);
     }
 
-    // Litiges d'un recruteur
-    @GetMapping("/recruteur/{recruteurId}")
-    public ResponseEntity<List<LitigeDTO>> getLitigesParRecruteur(@PathVariable Long recruteurId) {
-        List<LitigeDTO> litiges = litigeService.getLitigesParRecruteur(recruteurId);
-        return ResponseEntity.ok(litiges);
-    }
-
-    //  Litiges d'une mission
+    // Litiges d'une mission (avec vérification d'accès)
     @GetMapping("/mission/{missionId}")
     public ResponseEntity<List<LitigeDTO>> getLitigesParMission(@PathVariable Long missionId) {
-        List<LitigeDTO> litiges = litigeService.getLitigesParMission(missionId);
+        Long userId = securityUtils.getCurrentUserId();
+        List<LitigeDTO> litiges = litigeService.getLitigesParMissionPourUtilisateur(missionId, userId);
         return ResponseEntity.ok(litiges);
     }
 
-    //  Litiges d'un administrateur
-    @GetMapping("/administrateur/{adminId}")
-    public ResponseEntity<List<LitigeDTO>> getLitigesParAdministrateur(@PathVariable Long adminId) {
-        List<LitigeDTO> litiges = litigeService.getLitigesParAdministrateur(adminId);
-        return ResponseEntity.ok(litiges);
-    }
-
-    //  Statistiques
+    // Statistiques (pour l'utilisateur connecté)
     @GetMapping("/statistiques")
     public ResponseEntity<StatistiquesLitigeDTO> getStatistiques() {
-        StatistiquesLitigeDTO stats = litigeService.getStatistiques();
+        Long userId = securityUtils.getCurrentUserId();
+        StatistiquesLitigeDTO stats = litigeService.getStatistiques(userId);
         return ResponseEntity.ok(stats);
     }
 }

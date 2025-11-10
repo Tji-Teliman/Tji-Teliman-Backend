@@ -7,6 +7,9 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
+import jakarta.persistence.FetchType;
+
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -14,6 +17,7 @@ import lombok.Getter;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Fetch;
 
 @Getter
 @Setter
@@ -48,4 +52,16 @@ public class JeunePrestateur extends Utilisateur {
 
     @OneToMany(mappedBy = "jeunePrestateur")
     private Set<Candidature> candidatures;
+
+    @OneToMany(mappedBy = "jeunePrestateur", cascade = CascadeType.ALL,  fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Litige> litiges = new ArrayList<>();
+
+
+    // Méthode helper pour maintenir la cohérence
+    public void addLitige(Litige litige) {
+        litiges.add(litige);
+        litige.setJeunePrestateur(this);
+    }
+
 }

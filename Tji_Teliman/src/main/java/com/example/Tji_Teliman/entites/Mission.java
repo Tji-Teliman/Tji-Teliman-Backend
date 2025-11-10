@@ -2,23 +2,10 @@ package com.example.Tji_Teliman.entites;
 
 import com.example.Tji_Teliman.entites.enums.StatutMission;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
-import jakarta.persistence.Transient;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
+import jakarta.persistence.*;
+
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Set;
 import java.util.List;
@@ -27,6 +14,8 @@ import lombok.Getter;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import jakarta.persistence.CascadeType;
+
 
 @Getter
 @Setter
@@ -140,4 +129,17 @@ public class Mission {
         
         return null;
     }
+
+    @OneToMany(mappedBy = "mission", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Litige> litiges = new ArrayList<>();
+
+    public List<Litige> getLitiges() { return litiges; }
+    public void setLitiges(List<Litige> litiges) { this.litiges = litiges; }
+
+    public void addLitige(Litige litige) {
+        litiges.add(litige);
+        litige.setMission(this);
+    }
+
 }

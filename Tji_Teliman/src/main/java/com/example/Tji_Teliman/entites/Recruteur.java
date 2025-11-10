@@ -2,14 +2,9 @@ package com.example.Tji_Teliman.entites;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.example.Tji_Teliman.entites.enums.TypeRecruteur;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
+import jakarta.persistence.*;
+
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -69,5 +64,15 @@ public class Recruteur extends Utilisateur {
     @JsonIgnore
     private List<Candidature> candidaturesValidees;
 
-    // Validation retirée pour autoriser l'inscription minimale.
+    @OneToMany(mappedBy = "recruteur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Litige> litiges = new ArrayList<>();
+
+    public List<Litige> getLitiges() { return litiges; }
+    public void setLitiges(List<Litige> litiges) { this.litiges = litiges; }
+
+    public void addLitige(Litige litige) {
+        litiges.add(litige);
+        litige.setRecruteur(this);
+    }
 }

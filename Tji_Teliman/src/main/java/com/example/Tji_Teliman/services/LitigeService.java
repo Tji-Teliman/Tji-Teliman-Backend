@@ -159,4 +159,103 @@ public class LitigeService {
         stats.setLitigesNonAssignes(litigeRepository.countByAdministrateurIsNull());
         return stats;
     }
+
+
+    // NOUVELLE MÉTHODE - Créer un litige avec userId (surcharge)
+    public LitigeDTO creerLitige(CreationLitigeDTO dto, Long userId) {
+        // Utilisez l'userId du token au lieu de celui du DTO
+        JeunePrestateur jeune = jeunePrestateurRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Jeune prestataire non trouvé"));
+
+        // Pour le recruteur et la mission, gardez la logique du DTO ou adaptez
+        Recruteur recruteur = recruteurRepository.findById(dto.getRecruteurId())
+                .orElseThrow(() -> new RuntimeException("Recruteur non trouvé"));
+        Mission mission = missionRepository.findById(dto.getMissionId())
+                .orElseThrow(() -> new RuntimeException("Mission non trouvée"));
+
+        Litige litige = new Litige();
+        litige.setTitre(dto.getTitre());
+        litige.setDescription(dto.getDescription());
+        litige.setType(TypeLitige.valueOf(dto.getType()));
+        litige.setStatut(StatutLitige.OUVERT);
+        litige.setJeunePrestateur(jeune);  // ← Utilise l'userId du token
+        litige.setRecruteur(recruteur);
+        litige.setMission(mission);
+        litige.setDateCreation(LocalDateTime.now());
+
+        Litige savedLitige = litigeRepository.save(litige);
+        return litigeMapper.toDto(savedLitige);
+    }
+
+    // NOUVELLE MÉTHODE - Tous les litiges pour un utilisateur
+    public List<LitigeDTO> getTousLesLitiges(Long userId) {
+        // Retourne seulement les litiges de l'utilisateur connecté
+        return litigeRepository.findByJeunePrestateurId(userId)
+                .stream()
+                .map(litigeMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    // NOUVELLE MÉTHODE - Litiges par statut pour un utilisateur
+    public List<LitigeDTO> getLitigesParStatut(String statut, Long userId) {
+        return litigeRepository.findByJeunePrestateurId(userId)
+                .stream()
+                .filter(litige -> litige.getStatut().name().equals(statut))
+                .map(litigeMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    // NOUVELLE MÉTHODE - Litiges pour un utilisateur
+    public List<LitigeDTO> getLitigesParUtilisateur(Long userId) {
+        return litigeRepository.findByJeunePrestateurId(userId)
+                .stream()
+                .map(litigeMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    // NOUVELLE MÉTHODE - Litiges d'une mission pour un utilisateur
+    public List<LitigeDTO> getLitigesParMissionPourUtilisateur(Long missionId, Long userId) {
+        return litigeRepository.findByMissionIdAndJeunePrestateurId(missionId, userId)
+                .stream()
+                .map(litigeMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    // NOUVELLE MÉTHODE - Résoudre un litige avec adminId
+    public LitigeDTO resoudreLitige(Long litigeId, ResolutionLitigeDTO dto, Long adminId) {
+        Litige litige = litigeRepository.findById(litigeId)
+                .orElseThrow(() -> new RuntimeException("Litige non trouvé"));
+
+        // Associe l'admin connecté
+        Administrateur administrateur = administrateurRepository.findById(adminId)
+                .orElseThrow(() -> new RuntimeException("Administrateur non trouvé"));
+
+        litige.setDecisionAdministrateur(dto.getDecisionAdministrateur());
+        litige.setStatut(StatutLitige.valueOf(dto.getStatut()));
+        litige.setDateResolution(LocalDateTime.now());
+        litige.setAdministrateur(administrateur);  // ← Admin du token
+
+        Litige savedLitige = litigeRepository.save(litige);
+        return litigeMapper.toDto(savedLitige);
+    }
+
+    // NOUVELLE MÉTHODE - Statistiques pour un utilisateur
+    public StatistiquesLitigeDTO getStatistiques(Long userId) {
+        List<Litige> litiges = litigeRepository.findByJeunePrestateurId(userId);
+
+        long total = litiges.size();
+        long ouverts = litiges.stream().filter(l -> l.getStatut() == StatutLitige.OUVERT).count();
+        long enCours = litiges.stream().filter(l -> l.getStatut() == StatutLitige.EN_COURS).count();
+        long resolus = litiges.stream().filter(l -> l.getStatut() == StatutLitige.RESOLU).count();
+        double tauxResolution = total > 0 ? (resolus * 100.0) / total : 0.0;
+
+        // Créez un objet StatistiquesLitigeDTO avec ces valeurs
+        StatistiquesLitigeDTO stats = new StatistiquesLitigeDTO();
+        stats.setTotalLitiges(total);
+        stats.setLitigesOuverts(ouverts);
+        stats.setLitigesEnCours(enCours);
+        stats.setLitigesResolus(resolus);
+
+        return stats;
+    }
 }
