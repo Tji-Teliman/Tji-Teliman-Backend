@@ -36,6 +36,10 @@ public class ProfileController {
     // Créer ou mettre à jour mon profil (jeune ou recruteur)
     @PostMapping("/mon-profil")
     public ResponseEntity<?> createOrUpdateMyProfile(
+        @RequestParam(required = false) String nom,
+        @RequestParam(required = false) String prenom,
+        @RequestParam(required = false) String telephone,
+        @RequestParam(required = false) String email,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date dateNaissance,
         @RequestParam(required = false) MultipartFile photo,
         @RequestParam(required = false) MultipartFile carteIdentite,
@@ -46,10 +50,7 @@ public class ProfileController {
         @RequestParam(required = false) String secteurActivite,
         @RequestParam(required = false) String emailEntreprise,
         @RequestParam(required = false) String siteWeb,
-        @RequestParam(required = false) Double latitude,
-        @RequestParam(required = false) Double longitude,
         @RequestParam(required = false) String adresse,
-        @RequestParam(required = false) String placeId,
         HttpServletRequest httpRequest
     ) throws IOException {
         try {
@@ -67,19 +68,16 @@ public class ProfileController {
             System.out.println("siteWeb: '" + siteWeb + "'");
             System.out.println("profession: '" + profession + "'");
             System.out.println("dateNaissance: " + dateNaissance);
+            System.out.println("adresse: '" + adresse + "'");
             
             // Déterminer le type d'utilisateur et mettre à jour le profil approprié
             UserProfileDTO userProfile = profileService.getUserProfile(userId);
             
             if (userProfile.getRole().equals("JEUNE_PRESTATEUR")) {
                 // Mise à jour du profil jeune
-                var jeune = profileService.updateJeune(userId, dateNaissance, photo, carteIdentite);
+                var jeune = profileService.updateJeune(userId, nom, prenom, telephone, email, dateNaissance, adresse, photo, carteIdentite);
                 if (competences != null && !competences.isEmpty()) {
                     jeune = profileService.setCompetencesJeune(userId, new java.util.ArrayList<>(competences));
-                }
-                // Mettre à jour la géolocalisation si fournie
-                if (latitude != null || longitude != null || adresse != null || placeId != null) {
-                    jeune = profileService.updateJeuneLocation(userId, latitude, longitude, adresse, placeId);
                 }
                 JeunePrestateurProfileDTO dto = profileService.toProfileDTO(jeune);
                 return ResponseEntity.ok(new ApiResponse(true, "Profil jeune mis à jour", dto));
@@ -110,7 +108,7 @@ public class ProfileController {
                     System.out.println("secteurActivite: " + secteurActivite);
                     System.out.println("emailEntreprise: " + emailEntreprise);
                     System.out.println("siteWeb: " + siteWeb);
-                    var recruteur = profileService.updateRecruteurEntrepriseWithTypeAndLocation(userId, nomEntreprise, secteurActivite, emailEntreprise, siteWeb, photo, carteIdentite, latitude, longitude, adresse, placeId);
+                    var recruteur = profileService.updateRecruteurEntrepriseWithTypeAndAdresse(userId, nom, prenom, telephone, email, nomEntreprise, secteurActivite, emailEntreprise, siteWeb, photo, carteIdentite, adresse);
                     return ResponseEntity.ok(new ApiResponse(true, "Profil recruteur entreprise mis à jour", recruteur));
                 } else {
                     // Recruteur particulier (par défaut)
@@ -118,7 +116,7 @@ public class ProfileController {
                     System.out.println("dateNaissance: " + dateNaissance);
                     System.out.println("profession: " + profession);
                     System.out.println("DEBUG - Type détecté: PARTICULIER");
-                    var recruteur = profileService.updateRecruteurParticulierWithTypeAndLocation(userId, dateNaissance, profession, photo, carteIdentite, latitude, longitude, adresse, placeId);
+                    var recruteur = profileService.updateRecruteurParticulierWithTypeAndAdresse(userId, nom, prenom, telephone, email, dateNaissance, profession, adresse, photo, carteIdentite);
                     return ResponseEntity.ok(new ApiResponse(true, "Profil recruteur particulier mis à jour", recruteur));
                 }
             } else {
@@ -138,7 +136,7 @@ public class ProfileController {
             if (userId == null) {
                 return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
             }
-            UserProfileDTO dto = profileService.getUserProfile(userId);
+            Object dto = profileService.getFullUserProfile(userId);
             return ResponseEntity.ok(new ApiResponse(true, "Profil récupéré", dto));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));

@@ -25,6 +25,12 @@ public class MissionDTO {
     private String categorieNom;
     private String categorieUrlPhoto;
     private Long nombreCandidatures;
+    
+    // Informations du recruteur
+    private String recruteurNom;
+    private String recruteurPrenom;
+    private String recruteurUrlPhoto;
+    private Double recruteurNote; // Note moyenne du recruteur
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -66,6 +72,14 @@ public class MissionDTO {
     public void setCategorieUrlPhoto(String categorieUrlPhoto) { this.categorieUrlPhoto = categorieUrlPhoto; }
     public Long getNombreCandidatures() { return nombreCandidatures; }
     public void setNombreCandidatures(Long nombreCandidatures) { this.nombreCandidatures = nombreCandidatures; }
+    
+    // Getters et setters pour les informations du recruteur
+    public String getRecruteurNom() { return recruteurNom; }
+    public void setRecruteurNom(String recruteurNom) { this.recruteurNom = recruteurNom; }
+    public String getRecruteurPrenom() { return recruteurPrenom; }
+    public void setRecruteurPrenom(String recruteurPrenom) { this.recruteurPrenom = recruteurPrenom; }
+    public String getRecruteurUrlPhoto() { return recruteurUrlPhoto; }
+    public void setRecruteurUrlPhoto(String recruteurUrlPhoto) { this.recruteurUrlPhoto = recruteurUrlPhoto; }
+    public Double getRecruteurNote() { return recruteurNote; }
+    public void setRecruteurNote(Double recruteurNote) { this.recruteurNote = recruteurNote; }
 }
-
-
