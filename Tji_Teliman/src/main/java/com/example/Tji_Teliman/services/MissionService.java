@@ -23,16 +23,18 @@ public class MissionService {
     private final CategorieRepository categorieRepository;
     private final CandidatureRepository candidatureRepository;
     private final NotificationService notificationService;
+    private final PaiementService paiementService;
     private final GoogleMapsService googleMapsService;
     private final NotationService notationService;
     private final FilePathConverter filePathConverter;
 
-    public MissionService(MissionRepository missionRepository, RecruteurRepository recruteurRepository, CategorieRepository categorieRepository, CandidatureRepository candidatureRepository, NotificationService notificationService, GoogleMapsService googleMapsService, NotationService notationService, FilePathConverter filePathConverter) {
+    public MissionService(MissionRepository missionRepository, RecruteurRepository recruteurRepository, CategorieRepository categorieRepository, CandidatureRepository candidatureRepository, NotificationService notificationService, PaiementService paiementService, GoogleMapsService googleMapsService, NotationService notationService, FilePathConverter filePathConverter) {
         this.missionRepository = missionRepository;
         this.recruteurRepository = recruteurRepository;
         this.categorieRepository = categorieRepository;
         this.candidatureRepository = candidatureRepository;
         this.notificationService = notificationService;
+        this.paiementService = paiementService;
         this.googleMapsService = googleMapsService;
         this.notationService = notationService;
         this.filePathConverter = filePathConverter;
@@ -207,6 +209,7 @@ public class MissionService {
                     mission.setStatut(StatutMission.TERMINEE);
                     missionRepository.save(mission);
                     notificationService.notifyMissionTerminee(mission.getRecruteur(), mission);
+                    paiementService.createPendingPaiementsForMission(mission);
                 }
             }
         }
@@ -235,6 +238,7 @@ public class MissionService {
         
         // Notifier le recruteur que la mission est terminée et qu'il doit effectuer le paiement
         notificationService.notifyMissionTerminee(mission.getRecruteur(), savedMission);
+        paiementService.createPendingPaiementsForMission(savedMission);
         
         return savedMission;
     }
