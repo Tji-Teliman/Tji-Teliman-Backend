@@ -35,10 +35,7 @@ public class Recruteur extends Utilisateur {
 
     private String profession;
 
-    private String adresse; // deprecated: remplacée par adresse + lat/lng via Google Maps
-    private Double latitude;
-    private Double longitude;
-    private String placeId;
+    private String adresse;
 
     private String urlPhoto;
 

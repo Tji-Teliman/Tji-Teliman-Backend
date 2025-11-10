@@ -10,8 +10,11 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
@@ -82,10 +85,28 @@ public class SecurityConfig implements WebMvcConfigurer {
     }
 
     @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // Servir les fichiers uploadés depuis le dossier uploads/
+        Path uploadsPath = Paths.get("uploads").toAbsolutePath().normalize();
+        // Format correct pour Windows et Unix/Linux
+        String uploadsLocation = "file:" + uploadsPath.toString().replace("\\", "/") + "/";
+        
+        // Ajouter le ResourceHandler pour servir les fichiers statiques
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations(uploadsLocation)
+                .setCachePeriod(3600) // Cache pour 1 heure
+                .resourceChain(true); // Activer la chaîne de ressources pour meilleure performance
+        
+        // Log pour debug (peut être retiré en production)
+        System.out.println("Configuration ResourceHandler - Chemin uploads: " + uploadsLocation);
+        System.out.println("Chemin absolu normalisé: " + uploadsPath.toString());
+    }
+    
+    @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(userStatusInterceptor)
             .addPathPatterns("/api/**")
-            .excludePathPatterns("/api/auth/**");
+            .excludePathPatterns("/api/auth/**", "/uploads/**"); // Exclure les fichiers uploadés de l'intercepteur
     }
 }
 

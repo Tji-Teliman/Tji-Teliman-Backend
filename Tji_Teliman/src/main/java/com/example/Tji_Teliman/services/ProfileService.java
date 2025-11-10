@@ -8,7 +8,9 @@ import com.example.Tji_Teliman.entites.enums.TypeRecruteur;
 import com.example.Tji_Teliman.repository.JeunePrestateurRepository;
 import com.example.Tji_Teliman.repository.RecruteurRepository;
 import com.example.Tji_Teliman.repository.CompetenceRepository;
+import com.example.Tji_Teliman.repository.UtilisateurRepository;
 import com.example.Tji_Teliman.dto.JeunePrestateurProfileDTO;
+import com.example.Tji_Teliman.dto.RecruteurProfileDTO;
 import com.example.Tji_Teliman.dto.UserProfileDTO;
 import com.example.Tji_Teliman.dto.NotationMoyenneDTO;
 import com.example.Tji_Teliman.entites.Notation;
@@ -21,7 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
-public class ProfileService {
+public class
+ProfileService {
 
     private final JeunePrestateurRepository jeuneRepo;
     private final RecruteurRepository recruteurRepo;
@@ -30,8 +33,9 @@ public class ProfileService {
     private final CandidatureService candidatureService;
     private final GoogleMapsService googleMapsService;
     private final NotationService notationService;
+    private final UtilisateurRepository utilisateurRepository;
 
-    public ProfileService(JeunePrestateurRepository jeuneRepo, RecruteurRepository recruteurRepo, FileStorageService storageService, CompetenceRepository competenceRepository, CandidatureService candidatureService, GoogleMapsService googleMapsService, NotationService notationService) {
+    public ProfileService(JeunePrestateurRepository jeuneRepo, RecruteurRepository recruteurRepo, FileStorageService storageService, CompetenceRepository competenceRepository, CandidatureService candidatureService, GoogleMapsService googleMapsService, NotationService notationService, UtilisateurRepository utilisateurRepository) {
         this.jeuneRepo = jeuneRepo;
         this.recruteurRepo = recruteurRepo;
         this.storageService = storageService;
@@ -39,13 +43,53 @@ public class ProfileService {
         this.candidatureService = candidatureService;
         this.googleMapsService = googleMapsService;
         this.notationService = notationService;
+        this.utilisateurRepository = utilisateurRepository;
     }
 
     @Transactional
-    public JeunePrestateur updateJeune(Long id, Date dateNaissance, MultipartFile photo, MultipartFile carteIdentiteFile) throws IOException {
+    public JeunePrestateur updateJeune(Long id, String nom, String prenom, String telephone, String email, Date dateNaissance, String adresse, MultipartFile photo, MultipartFile carteIdentiteFile) throws IOException {
         JeunePrestateur j = jeuneRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("JeunePrestateur introuvable"));
+        
+        // Mise à jour du nom
+        if (nom != null && !nom.trim().isEmpty()) {
+            j.setNom(nom.trim());
+        }
+        
+        // Mise à jour du prénom
+        if (prenom != null && !prenom.trim().isEmpty()) {
+            j.setPrenom(prenom.trim());
+        }
+        
+        // Mise à jour du téléphone avec validation
+        if (telephone != null && !telephone.trim().isEmpty()) {
+            String tel = telephone.trim();
+            if (!tel.matches("^\\d{8,}$")) {
+                throw new IllegalArgumentException("Le numéro de téléphone doit contenir au moins 8 chiffres");
+            }
+            // Vérifier l'unicité (sauf pour l'utilisateur actuel)
+            var existingUser = utilisateurRepository.findByTelephone(tel);
+            if (existingUser.isPresent() && !existingUser.get().getId().equals(id)) {
+                throw new IllegalArgumentException("Ce numéro de téléphone est déjà utilisé");
+            }
+            j.setTelephone(tel);
+        }
+        
+        // Mise à jour de l'email avec validation
+        if (email != null && !email.trim().isEmpty()) {
+            String emailTrimmed = email.trim();
+            if (!emailTrimmed.toLowerCase().endsWith("@gmail.com")) {
+                throw new IllegalArgumentException("L'adresse email doit se terminer par @gmail.com");
+            }
+            // Vérifier l'unicité (sauf pour l'utilisateur actuel)
+            var existingUser = utilisateurRepository.findByEmail(emailTrimmed);
+            if (existingUser.isPresent() && !existingUser.get().getId().equals(id)) {
+                throw new IllegalArgumentException("Cet email est déjà utilisé");
+            }
+            j.setEmail(emailTrimmed);
+        }
+        
         if (dateNaissance != null) j.setDateNaissance(dateNaissance);
-        // localisation deprecated: utiliser lat/lng/adresse/placeId
+        if (adresse != null && !adresse.trim().isEmpty()) j.setAdresse(adresse);
         if (carteIdentiteFile != null && !carteIdentiteFile.isEmpty()) {
             String pathCI = storageService.store(carteIdentiteFile, "jeunes");
             j.setCarteIdentite(pathCI);
@@ -58,60 +102,20 @@ public class ProfileService {
     }
 
     @Transactional
-    public JeunePrestateur updateJeuneLocation(Long id, Double latitude, Double longitude, String adresse, String placeId) {
+    public JeunePrestateur updateJeuneAdresse(Long id, String adresse) {
         JeunePrestateur j = jeuneRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("JeunePrestateur introuvable"));
-        
-        // Gestion de la géolocalisation : deux cas possibles
-        if (placeId != null && !placeId.isBlank()) {
-            // Cas 1: placeId fourni -> enrichir avec les détails Google Maps
-            var details = googleMapsService.fetchPlaceDetails(placeId);
-            if (details != null) {
-                latitude = details.lat();
-                longitude = details.lng();
-                adresse = details.formattedAddress();
-            }
-        } else if (latitude != null && longitude != null) {
-            // Cas 2: seulement lat/lng fournis -> géocodage inverse pour obtenir placeId et adresse
-            var reverseResult = googleMapsService.reverseGeocode(latitude, longitude);
-            if (reverseResult != null) {
-                placeId = reverseResult.placeId();
-                adresse = reverseResult.formattedAddress();
-            }
+        if (adresse != null && !adresse.trim().isEmpty()) {
+            j.setAdresse(adresse);
         }
-        
-        j.setLatitude(latitude);
-        j.setLongitude(longitude);
-        j.setAdresse(adresse);
-        j.setPlaceId(placeId);
         return jeuneRepo.save(j);
     }
 
     @Transactional
-    public Recruteur updateRecruteurLocation(Long id, Double latitude, Double longitude, String adresse, String placeId) {
+    public Recruteur updateRecruteurAdresse(Long id, String adresse) {
         Recruteur r = recruteurRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("Recruteur introuvable"));
-        
-        // Gestion de la géolocalisation : deux cas possibles
-        if (placeId != null && !placeId.isBlank()) {
-            // Cas 1: placeId fourni -> enrichir avec les détails Google Maps
-            var details = googleMapsService.fetchPlaceDetails(placeId);
-            if (details != null) {
-                latitude = details.lat();
-                longitude = details.lng();
-                adresse = details.formattedAddress();
-            }
-        } else if (latitude != null && longitude != null) {
-            // Cas 2: seulement lat/lng fournis -> géocodage inverse pour obtenir placeId et adresse
-            var reverseResult = googleMapsService.reverseGeocode(latitude, longitude);
-            if (reverseResult != null) {
-                placeId = reverseResult.placeId();
-                adresse = reverseResult.formattedAddress();
-            }
+        if (adresse != null && !adresse.trim().isEmpty()) {
+            r.setAdresse(adresse);
         }
-        
-        r.setLatitude(latitude);
-        r.setLongitude(longitude);
-        r.setAdresse(adresse);
-        r.setPlaceId(placeId);
         return recruteurRepo.save(r);
     }
 
@@ -154,9 +158,11 @@ public class ProfileService {
         dto.setTelephone(j.getTelephone());
         dto.setRole(j.getRole().name());
         dto.setGenre(j.getGenre().name());
+        dto.setStatut(j.getStatut().name());
         dto.setDateCreation(j.getDateCreation());
         dto.setDateNaissance(j.getDateNaissance());
         dto.setLocalisation(j.getAdresse()); // utiliser adresse au lieu de localisation
+        dto.setAdresse(j.getAdresse());
         dto.setUrlPhoto(j.getUrlPhoto());
         dto.setCarteIdentite(j.getCarteIdentite());
         if (j.getCompetences() != null) {
@@ -172,6 +178,31 @@ public class ProfileService {
             NotationMoyenneDTO notationMoyenne = new NotationMoyenneDTO(moyenneNotes, notationsRecues.size());
             dto.setNotationMoyenne(notationMoyenne);
         }
+        return dto;
+    }
+
+    @Transactional(readOnly = true)
+    public RecruteurProfileDTO toProfileDTO(Recruteur r) {
+        RecruteurProfileDTO dto = new RecruteurProfileDTO();
+        dto.setId(r.getId());
+        dto.setNom(r.getNom());
+        dto.setPrenom(r.getPrenom());
+        dto.setEmail(r.getEmail());
+        dto.setTelephone(r.getTelephone());
+        dto.setRole(r.getRole().name());
+        dto.setGenre(r.getGenre().name());
+        dto.setStatut(r.getStatut().name());
+        dto.setDateCreation(r.getDateCreation());
+        dto.setTypeRecruteur(r.getTypeRecruteur() == null ? null : r.getTypeRecruteur().name());
+        dto.setDateNaissance(r.getDateNaissance());
+        dto.setProfession(r.getProfession());
+        dto.setAdresse(r.getAdresse());
+        dto.setUrlPhoto(r.getUrlPhoto());
+        dto.setCarteIdentite(r.getCarteIdentite());
+        dto.setNomEntreprise(r.getNomEntreprise());
+        dto.setSecteurActivite(r.getSecteurActivite());
+        dto.setEmailEntreprise(r.getEmailEntreprise());
+        dto.setSiteWeb(r.getSiteWeb());
         return dto;
     }
 
@@ -238,14 +269,14 @@ public class ProfileService {
     }
 
     @Transactional
-    public Recruteur updateRecruteurParticulier(Long id, Date dateNaissance, String profession, MultipartFile photo) throws IOException {
+    public Recruteur updateRecruteurParticulier(Long id, Date dateNaissance, String profession, String adresse, MultipartFile photo) throws IOException {
         Recruteur r = recruteurRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("Recruteur introuvable"));
         if (r.getTypeRecruteur() != TypeRecruteur.PARTICULIER) {
             throw new IllegalArgumentException("Type du recruteur non PARTICULIER");
         }
         if (dateNaissance != null) r.setDateNaissance(dateNaissance);
-        if (profession != null) r.setProfession(profession);
-        // adresse deprecated: utiliser lat/lng/adresse/placeId via updateRecruteurLocation
+        if (profession != null && !profession.trim().isEmpty()) r.setProfession(profession);
+        if (adresse != null && !adresse.trim().isEmpty()) r.setAdresse(adresse);
         if (photo != null && !photo.isEmpty()) {
             String path = storageService.store(photo, "recruteurs");
             r.setUrlPhoto(path);
@@ -274,7 +305,7 @@ public class ProfileService {
      * Mettre à jour un recruteur particulier en définissant le type si nécessaire
      */
     @Transactional
-    public Recruteur updateRecruteurParticulierWithType(Long id, Date dateNaissance, String profession, MultipartFile photo) throws IOException {
+    public Recruteur updateRecruteurParticulierWithType(Long id, Date dateNaissance, String profession, String adresse, MultipartFile photo) throws IOException {
         Recruteur r = recruteurRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("Recruteur introuvable"));
         
         // Définir le type si ce n'est pas déjà fait
@@ -284,6 +315,7 @@ public class ProfileService {
         
         if (dateNaissance != null) r.setDateNaissance(dateNaissance);
         if (profession != null && !profession.trim().isEmpty()) r.setProfession(profession);
+        if (adresse != null && !adresse.trim().isEmpty()) r.setAdresse(adresse);
         if (photo != null && !photo.isEmpty()) {
             String path = storageService.store(photo, "recruteurs");
             r.setUrlPhoto(path);
@@ -333,15 +365,53 @@ public class ProfileService {
     }
 
     /**
-     * Mettre à jour un recruteur entreprise avec géolocalisation en une seule opération
+     * Mettre à jour un recruteur entreprise avec adresse en une seule opération
      */
     @Transactional
-    public Recruteur updateRecruteurEntrepriseWithTypeAndLocation(Long id, String nomEntreprise, String secteurActivite, String emailEntreprise, String siteWeb, MultipartFile photo, MultipartFile carteIdentite, Double latitude, Double longitude, String adresse, String placeId) throws IOException {
+    public Recruteur updateRecruteurEntrepriseWithTypeAndAdresse(Long id, String nom, String prenom, String telephone, String email, String nomEntreprise, String secteurActivite, String emailEntreprise, String siteWeb, MultipartFile photo, MultipartFile carteIdentite, String adresse) throws IOException {
         Recruteur r = recruteurRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("Recruteur introuvable"));
         
         // Définir le type si ce n'est pas déjà fait
         if (r.getTypeRecruteur() == null) {
             r.setTypeRecruteur(TypeRecruteur.ENTREPRISE);
+        }
+        
+        // Mise à jour du nom
+        if (nom != null && !nom.trim().isEmpty()) {
+            r.setNom(nom.trim());
+        }
+        
+        // Mise à jour du prénom
+        if (prenom != null && !prenom.trim().isEmpty()) {
+            r.setPrenom(prenom.trim());
+        }
+        
+        // Mise à jour du téléphone avec validation
+        if (telephone != null && !telephone.trim().isEmpty()) {
+            String tel = telephone.trim();
+            if (!tel.matches("^\\d{8,}$")) {
+                throw new IllegalArgumentException("Le numéro de téléphone doit contenir au moins 8 chiffres");
+            }
+            // Vérifier l'unicité (sauf pour l'utilisateur actuel)
+            var existingUser = utilisateurRepository.findByTelephone(tel);
+            if (existingUser.isPresent() && !existingUser.get().getId().equals(id)) {
+                throw new IllegalArgumentException("Ce numéro de téléphone est déjà utilisé");
+            }
+            r.setTelephone(tel);
+        }
+        
+        // Mise à jour de l'email avec validation
+        if (email != null && !email.trim().isEmpty()) {
+            String emailTrimmed = email.trim();
+            if (!emailTrimmed.toLowerCase().endsWith("@gmail.com")) {
+                throw new IllegalArgumentException("L'adresse email doit se terminer par @gmail.com");
+            }
+            // Vérifier l'unicité (sauf pour l'utilisateur actuel)
+            var existingUser = utilisateurRepository.findByEmail(emailTrimmed);
+            if (existingUser.isPresent() && !existingUser.get().getId().equals(id)) {
+                throw new IllegalArgumentException("Cet email est déjà utilisé");
+            }
+            r.setEmail(emailTrimmed);
         }
         
         System.out.println("DEBUG Service - Valeurs reçues:");
@@ -366,6 +436,9 @@ public class ProfileService {
             r.setSiteWeb(siteWeb);
             System.out.println("DEBUG - siteWeb défini: " + siteWeb);
         }
+        if (adresse != null && !adresse.trim().isEmpty()) {
+            r.setAdresse(adresse);
+        }
         if (photo != null && !photo.isEmpty()) {
             String path = storageService.store(photo, "recruteurs");
             r.setUrlPhoto(path);
@@ -375,40 +448,14 @@ public class ProfileService {
             r.setCarteIdentite(pathCI);
         }
         
-        // Gestion de la géolocalisation
-        if (latitude != null || longitude != null || adresse != null || placeId != null) {
-            // Gestion de la géolocalisation : deux cas possibles
-            if (placeId != null && !placeId.isBlank()) {
-                // Cas 1: placeId fourni -> enrichir avec les détails Google Maps
-                var details = googleMapsService.fetchPlaceDetails(placeId);
-                if (details != null) {
-                    latitude = details.lat();
-                    longitude = details.lng();
-                    adresse = details.formattedAddress();
-                }
-            } else if (latitude != null && longitude != null) {
-                // Cas 2: seulement lat/lng fournis -> géocodage inverse pour obtenir placeId et adresse
-                var reverseResult = googleMapsService.reverseGeocode(latitude, longitude);
-                if (reverseResult != null) {
-                    placeId = reverseResult.placeId();
-                    adresse = reverseResult.formattedAddress();
-                }
-            }
-            
-            r.setLatitude(latitude);
-            r.setLongitude(longitude);
-            r.setAdresse(adresse);
-            r.setPlaceId(placeId);
-        }
-        
         return recruteurRepo.save(r);
     }
 
     /**
-     * Mettre à jour un recruteur particulier avec géolocalisation en une seule opération
+     * Mettre à jour un recruteur particulier avec adresse en une seule opération
      */
     @Transactional
-    public Recruteur updateRecruteurParticulierWithTypeAndLocation(Long id, Date dateNaissance, String profession, MultipartFile photo, MultipartFile carteIdentite, Double latitude, Double longitude, String adresse, String placeId) throws IOException {
+    public Recruteur updateRecruteurParticulierWithTypeAndAdresse(Long id, String nom, String prenom, String telephone, String email, Date dateNaissance, String profession, String adresse, MultipartFile photo, MultipartFile carteIdentite) throws IOException {
         Recruteur r = recruteurRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("Recruteur introuvable"));
         
         // Définir le type si ce n'est pas déjà fait
@@ -416,8 +463,47 @@ public class ProfileService {
             r.setTypeRecruteur(TypeRecruteur.PARTICULIER);
         }
         
+        // Mise à jour du nom
+        if (nom != null && !nom.trim().isEmpty()) {
+            r.setNom(nom.trim());
+        }
+        
+        // Mise à jour du prénom
+        if (prenom != null && !prenom.trim().isEmpty()) {
+            r.setPrenom(prenom.trim());
+        }
+        
+        // Mise à jour du téléphone avec validation
+        if (telephone != null && !telephone.trim().isEmpty()) {
+            String tel = telephone.trim();
+            if (!tel.matches("^\\d{8,}$")) {
+                throw new IllegalArgumentException("Le numéro de téléphone doit contenir au moins 8 chiffres");
+            }
+            // Vérifier l'unicité (sauf pour l'utilisateur actuel)
+            var existingUser = utilisateurRepository.findByTelephone(tel);
+            if (existingUser.isPresent() && !existingUser.get().getId().equals(id)) {
+                throw new IllegalArgumentException("Ce numéro de téléphone est déjà utilisé");
+            }
+            r.setTelephone(tel);
+        }
+        
+        // Mise à jour de l'email avec validation
+        if (email != null && !email.trim().isEmpty()) {
+            String emailTrimmed = email.trim();
+            if (!emailTrimmed.toLowerCase().endsWith("@gmail.com")) {
+                throw new IllegalArgumentException("L'adresse email doit se terminer par @gmail.com");
+            }
+            // Vérifier l'unicité (sauf pour l'utilisateur actuel)
+            var existingUser = utilisateurRepository.findByEmail(emailTrimmed);
+            if (existingUser.isPresent() && !existingUser.get().getId().equals(id)) {
+                throw new IllegalArgumentException("Cet email est déjà utilisé");
+            }
+            r.setEmail(emailTrimmed);
+        }
+        
         if (dateNaissance != null) r.setDateNaissance(dateNaissance);
         if (profession != null && !profession.trim().isEmpty()) r.setProfession(profession);
+        if (adresse != null && !adresse.trim().isEmpty()) r.setAdresse(adresse);
         if (photo != null && !photo.isEmpty()) {
             String path = storageService.store(photo, "recruteurs");
             r.setUrlPhoto(path);
@@ -427,34 +513,21 @@ public class ProfileService {
             r.setCarteIdentite(pathCI);
         }
         
-        // Gestion de la géolocalisation
-        if (latitude != null || longitude != null || adresse != null || placeId != null) {
-            // Gestion de la géolocalisation : deux cas possibles
-            if (placeId != null && !placeId.isBlank()) {
-                // Cas 1: placeId fourni -> enrichir avec les détails Google Maps
-                var details = googleMapsService.fetchPlaceDetails(placeId);
-                if (details != null) {
-                    latitude = details.lat();
-                    longitude = details.lng();
-                    adresse = details.formattedAddress();
-                }
-            } else if (latitude != null && longitude != null) {
-                // Cas 2: seulement lat/lng fournis -> géocodage inverse pour obtenir placeId et adresse
-                var reverseResult = googleMapsService.reverseGeocode(latitude, longitude);
-                if (reverseResult != null) {
-                    placeId = reverseResult.placeId();
-                    adresse = reverseResult.formattedAddress();
-                }
-            }
-            
-            r.setLatitude(latitude);
-            r.setLongitude(longitude);
-            r.setAdresse(adresse);
-            r.setPlaceId(placeId);
-        }
-        
         return recruteurRepo.save(r);
     }
+    /**
+     * Retourne le profil complet selon le rôle (jeune ou recruteur)
+     */
+    @Transactional(readOnly = true)
+    public Object getFullUserProfile(Long userId) {
+        var jeuneOpt = jeuneRepo.findById(userId);
+        if (jeuneOpt.isPresent()) {
+            return toProfileDTO(jeuneOpt.get());
+        }
+        var recOpt = recruteurRepo.findById(userId);
+        if (recOpt.isPresent()) {
+            return toProfileDTO(recOpt.get());
+        }
+        throw new IllegalArgumentException("Utilisateur introuvable");
+    }
 }
-
-

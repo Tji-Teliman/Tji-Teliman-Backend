@@ -84,7 +84,7 @@ public class UtilisateurService {
             j.setRole(Role.JEUNE_PRESTATEUR);
             var saved = jeuneRepo.save(j);
             String token = jwtService.generateToken(saved.getId(), saved.getTelephone(), saved.getRole().name());
-            var user = new AuthResponse(saved.getId(), saved.getNom(), saved.getPrenom(), saved.getTelephone(), saved.getEmail(), saved.getRole().name(), saved.getGenre().name());
+            var user = new AuthResponse(saved.getId(), saved.getNom(), saved.getPrenom(), saved.getTelephone(), saved.getEmail(), saved.getRole().name(), saved.getGenre().name(), null);
             return new LoginResponse(user, token);
         } else if (roleEnum == Role.RECRUTEUR) {
             if (isBlank(req.typeRecruteur)) {
@@ -103,7 +103,7 @@ public class UtilisateurService {
             r.setTypeRecruteur(tr);
             var saved = recruteurRepo.save(r);
             String token = jwtService.generateToken(saved.getId(), saved.getTelephone(), saved.getRole().name());
-            var user = new AuthResponse(saved.getId(), saved.getNom(), saved.getPrenom(), saved.getTelephone(), saved.getEmail(), saved.getRole().name(), saved.getGenre().name());
+            var user = new AuthResponse(saved.getId(), saved.getNom(), saved.getPrenom(), saved.getTelephone(), saved.getEmail(), saved.getRole().name(), saved.getGenre().name(), saved.getTypeRecruteur() != null ? saved.getTypeRecruteur().name() : null);
             return new LoginResponse(user, token);
         } else {
             throw new IllegalArgumentException("Role non supporté pour inscription");
@@ -156,7 +156,7 @@ public class UtilisateurService {
         j.setRole(Role.JEUNE_PRESTATEUR);
         var saved = jeuneRepo.save(j);
         String token = jwtService.generateToken(saved.getId(), saved.getTelephone(), saved.getRole().name());
-        var user = new AuthResponse(saved.getId(), saved.getNom(), saved.getPrenom(), saved.getTelephone(), saved.getEmail(), saved.getRole().name(), saved.getGenre().name());
+        var user = new AuthResponse(saved.getId(), saved.getNom(), saved.getPrenom(), saved.getTelephone(), saved.getEmail(), saved.getRole().name(), saved.getGenre().name(), null);
         return new LoginResponse(user, token);
     }
 
@@ -210,7 +210,7 @@ public class UtilisateurService {
         r.setTypeRecruteur(tr);
         var saved = recruteurRepo.save(r);
         String token = jwtService.generateToken(saved.getId(), saved.getTelephone(), saved.getRole().name());
-        var user = new AuthResponse(saved.getId(), saved.getNom(), saved.getPrenom(), saved.getTelephone(), saved.getEmail(), saved.getRole().name(), saved.getGenre().name());
+        var user = new AuthResponse(saved.getId(), saved.getNom(), saved.getPrenom(), saved.getTelephone(), saved.getEmail(), saved.getRole().name(), saved.getGenre().name(), saved.getTypeRecruteur() != null ? saved.getTypeRecruteur().name() : null);
         return new LoginResponse(user, token);
     }
 
@@ -240,7 +240,8 @@ public class UtilisateurService {
         }
         // Retourner un payload sans motDePasse + token
         String token = jwtService.generateToken(user.getId(), user.getTelephone(), user.getRole().name());
-        return new LoginResponse(new AuthResponse(user.getId(), user.getNom(), user.getPrenom(), user.getTelephone(), user.getEmail(), user.getRole().name(), user.getGenre().name()), token);
+        String typeRecruteur = (user instanceof Recruteur) ? (((Recruteur) user).getTypeRecruteur() != null ? ((Recruteur) user).getTypeRecruteur().name() : null) : null;
+        return new LoginResponse(new AuthResponse(user.getId(), user.getNom(), user.getPrenom(), user.getTelephone(), user.getEmail(), user.getRole().name(), user.getGenre().name(), typeRecruteur), token);
     }
 
     @Transactional(readOnly = true)
@@ -263,7 +264,8 @@ public class UtilisateurService {
             throw new IllegalArgumentException("Mot de passe invalide");
         }
         String token = jwtService.generateToken(user.getId(), user.getTelephone(), user.getRole().name());
-        return new LoginResponse(new AuthResponse(user.getId(), user.getNom(), user.getPrenom(), user.getTelephone(), user.getEmail(), user.getRole().name(), user.getGenre().name()), token);
+        String typeRecruteur = (user instanceof Recruteur) ? (((Recruteur) user).getTypeRecruteur() != null ? ((Recruteur) user).getTypeRecruteur().name() : null) : null;
+        return new LoginResponse(new AuthResponse(user.getId(), user.getNom(), user.getPrenom(), user.getTelephone(), user.getEmail(), user.getRole().name(), user.getGenre().name(), typeRecruteur), token);
     }
 
     @Transactional
@@ -311,6 +313,6 @@ public class UtilisateurService {
         utilisateurRepository.save(user);
     }
 
-    public record AuthResponse(Long id, String nom, String prenom, String telephone, String email, String role, String genre) {}
+    public record AuthResponse(Long id, String nom, String prenom, String telephone, String email, String role, String genre, String typeRecruteur) {}
     public record LoginResponse(AuthResponse user, String token) {}
 }

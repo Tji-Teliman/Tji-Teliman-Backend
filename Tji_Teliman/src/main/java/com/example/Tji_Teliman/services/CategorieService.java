@@ -4,6 +4,7 @@ import com.example.Tji_Teliman.entites.Categorie;
 import com.example.Tji_Teliman.entites.Administrateur;
 import com.example.Tji_Teliman.repository.CategorieRepository;
 import com.example.Tji_Teliman.repository.AdministrateurRepository;
+import com.example.Tji_Teliman.config.FilePathConverter;
 import java.io.IOException;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -17,11 +18,13 @@ public class CategorieService {
     private final CategorieRepository categorieRepository;
     private final AdministrateurRepository administrateurRepository;
     private final FileStorageService storageService;
+    private final FilePathConverter filePathConverter;
 
-    public CategorieService(CategorieRepository categorieRepository, AdministrateurRepository administrateurRepository, FileStorageService storageService) {
+    public CategorieService(CategorieRepository categorieRepository, AdministrateurRepository administrateurRepository, FileStorageService storageService, FilePathConverter filePathConverter) {
         this.categorieRepository = categorieRepository;
         this.administrateurRepository = administrateurRepository;
         this.storageService = storageService;
+        this.filePathConverter = filePathConverter;
     }
 
     @Transactional
@@ -48,7 +51,7 @@ public class CategorieService {
         CategorieDTO dto = new CategorieDTO();
         dto.setId(c.getId());
         dto.setNom(c.getNom());
-        dto.setUrlPhoto(c.getUrlPhoto());
+        dto.setUrlPhoto(filePathConverter.toRelativePath(c.getUrlPhoto()));
         dto.setMissionsCount(c.getMissions() == null ? 0 : c.getMissions().size());
         return dto;
     }

@@ -1,6 +1,7 @@
 package com.example.Tji_Teliman.dto;
 
 import java.util.Date;
+import java.util.List;
 
 public class ProfilCandidatureDTO {
     private Long candidatureId;
@@ -12,6 +13,7 @@ public class ProfilCandidatureDTO {
     private String jeuneNom;
     private String jeunePrenom;
     private String jeuneUrlPhoto;
+    private List<String> competences; // Compétences du jeune
     
     // Statistiques du jeune
     private Double moyenneNotes;
@@ -51,6 +53,9 @@ public class ProfilCandidatureDTO {
     
     public String getJeuneUrlPhoto() { return jeuneUrlPhoto; }
     public void setJeuneUrlPhoto(String jeuneUrlPhoto) { this.jeuneUrlPhoto = jeuneUrlPhoto; }
+    
+    public List<String> getCompetences() { return competences; }
+    public void setCompetences(List<String> competences) { this.competences = competences; }
     
     public Double getMoyenneNotes() { return moyenneNotes; }
     public void setMoyenneNotes(Double moyenneNotes) { this.moyenneNotes = moyenneNotes; }
