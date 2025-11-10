@@ -15,9 +15,13 @@ public class PaiementDTO {
     private Long jeunePrestateurId;
     private String jeunePrestateurNom;
     private String jeunePrestateurPrenom;
+    private String jeunePrestateurTelephone;
     private Long missionId;
     private String missionTitre;
     private Double missionRemuneration;
+    private String missionStatut;
+    private Date missionDateDebut;
+    private Date missionDateFin;
 
     // Constructeurs
     public PaiementDTO() {}
@@ -59,6 +63,9 @@ public class PaiementDTO {
     public String getJeunePrestateurPrenom() { return jeunePrestateurPrenom; }
     public void setJeunePrestateurPrenom(String jeunePrestateurPrenom) { this.jeunePrestateurPrenom = jeunePrestateurPrenom; }
 
+    public String getJeunePrestateurTelephone() { return jeunePrestateurTelephone; }
+    public void setJeunePrestateurTelephone(String jeunePrestateurTelephone) { this.jeunePrestateurTelephone = jeunePrestateurTelephone; }
+
     public Long getMissionId() { return missionId; }
     public void setMissionId(Long missionId) { this.missionId = missionId; }
 
@@ -67,4 +74,13 @@ public class PaiementDTO {
 
     public Double getMissionRemuneration() { return missionRemuneration; }
     public void setMissionRemuneration(Double missionRemuneration) { this.missionRemuneration = missionRemuneration; }
+
+    public String getMissionStatut() { return missionStatut; }
+    public void setMissionStatut(String missionStatut) { this.missionStatut = missionStatut; }
+
+    public Date getMissionDateDebut() { return missionDateDebut; }
+    public void setMissionDateDebut(Date missionDateDebut) { this.missionDateDebut = missionDateDebut; }
+
+    public Date getMissionDateFin() { return missionDateFin; }
+    public void setMissionDateFin(Date missionDateFin) { this.missionDateFin = missionDateFin; }
 }

@@ -119,9 +119,7 @@ public class PaiementController {
     public ResponseEntity<List<PaiementDTO>> getPaiementsByStatut(@PathVariable String statut) {
         try {
             StatutPaiement statutPaiement = StatutPaiement.valueOf(statut.toUpperCase());
-            List<PaiementDTO> paiements = paiementService.getPaiementsByStatut(statutPaiement).stream()
-                    .map(paiementService::toDTO)
-                    .toList();
+            List<PaiementDTO> paiements = paiementService.getPaiementsByStatut(statutPaiement);
             return ResponseEntity.ok(paiements);
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(List.of());
