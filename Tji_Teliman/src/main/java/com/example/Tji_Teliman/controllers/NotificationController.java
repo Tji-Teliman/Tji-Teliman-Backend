@@ -1,10 +1,12 @@
 package com.example.Tji_Teliman.controllers;
 
+import com.example.Tji_Teliman.config.JwtUtils;
 import com.example.Tji_Teliman.dto.NotificationDTO;
 import com.example.Tji_Teliman.entites.Notification;
 import com.example.Tji_Teliman.entites.Utilisateur;
 import com.example.Tji_Teliman.repository.NotificationRepository;
 import com.example.Tji_Teliman.repository.UtilisateurRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -20,31 +22,43 @@ public class NotificationController {
 
     private final NotificationRepository notificationRepository;
     private final UtilisateurRepository utilisateurRepository;
+    private final JwtUtils jwtUtils;
 
-    public NotificationController(NotificationRepository notificationRepository, UtilisateurRepository utilisateurRepository) {
+    public NotificationController(NotificationRepository notificationRepository, UtilisateurRepository utilisateurRepository, JwtUtils jwtUtils) {
         this.notificationRepository = notificationRepository;
         this.utilisateurRepository = utilisateurRepository;
+        this.jwtUtils = jwtUtils;
     }
 
     public record ApiResponse(boolean success, String message, Object data) {}
 
-    @GetMapping("/utilisateur/{utilisateurId}")
-    public ResponseEntity<?> listByUtilisateur(@PathVariable Long utilisateurId) {
-        Utilisateur u = utilisateurRepository.findById(utilisateurId).orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
-        List<Notification> notifications = notificationRepository.findByDestinataireOrderByDateCreationDesc(u);
-        
-        // Marquer toutes les notifications comme lues lors de la consultation
-        for (Notification n : notifications) {
-            if (!n.isEstLue()) {
-                n.setEstLue(true);
-                notificationRepository.save(n);
+    // Lister les notifications de l'utilisateur connecté (et les marquer lues)
+    @GetMapping("/mes-notifications")
+    public ResponseEntity<?> listByUtilisateur(HttpServletRequest httpRequest) {
+        try {
+            Long utilisateurId = jwtUtils.getUserIdFromToken(httpRequest);
+            if (utilisateurId == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
             }
+            Utilisateur u = utilisateurRepository.findById(utilisateurId).orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
+            List<Notification> notifications = notificationRepository.findByDestinataireOrderByDateCreationDesc(u);
+            
+            // Marquer toutes les notifications comme lues lors de la consultation
+            for (Notification n : notifications) {
+                if (!n.isEstLue()) {
+                    n.setEstLue(true);
+                    notificationRepository.save(n);
+                }
+            }
+            
+            List<NotificationDTO> list = notifications.stream().map(this::toDTO).toList();
+            return ResponseEntity.ok(new ApiResponse(true, "Mes notifications", list));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
         }
-        
-        List<NotificationDTO> list = notifications.stream().map(this::toDTO).toList();
-        return ResponseEntity.ok(new ApiResponse(true, "OK", list));
     }
 
+    // Marquer une notification comme lue
     @PutMapping("/{notificationId}/lue")
     public ResponseEntity<?> markAsRead(@PathVariable Long notificationId) {
         Notification n = notificationRepository.findById(notificationId).orElseThrow(() -> new IllegalArgumentException("Notification introuvable"));
@@ -53,6 +67,7 @@ public class NotificationController {
         return ResponseEntity.ok(new ApiResponse(true, "Notification marquée comme lue", toDTO(n)));
     }
 
+    // Supprimer une notification
     @DeleteMapping("/{notificationId}")
     public ResponseEntity<?> delete(@PathVariable Long notificationId) {
         if (!notificationRepository.existsById(notificationId)) {

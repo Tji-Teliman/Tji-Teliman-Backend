@@ -244,4 +244,44 @@ public class NotationService {
         
         return dto;
     }
+
+    /**
+     * Méthode unifiée pour obtenir les notations reçues par un utilisateur (jeune ou recruteur)
+     */
+    @Transactional(readOnly = true)
+    public List<Notation> getNotationsRecuesParUtilisateur(Long userId) {
+        // Vérifier si c'est un jeune prestataire
+        Optional<JeunePrestateur> jeuneOpt = jeunePrestateurRepository.findById(userId);
+        if (jeuneOpt.isPresent()) {
+            return getNotationsRecuesParJeune(userId);
+        }
+        
+        // Vérifier si c'est un recruteur
+        Optional<Recruteur> recruteurOpt = recruteurRepository.findById(userId);
+        if (recruteurOpt.isPresent()) {
+            return getNotationsRecuesParRecruteur(userId);
+        }
+        
+        throw new IllegalArgumentException("Utilisateur introuvable ou type non supporté");
+    }
+
+    /**
+     * Méthode unifiée pour calculer la moyenne des notations reçues par un utilisateur (jeune ou recruteur)
+     */
+    @Transactional(readOnly = true)
+    public Double getMoyenneNotesUtilisateur(Long userId) {
+        // Vérifier si c'est un jeune prestataire
+        Optional<JeunePrestateur> jeuneOpt = jeunePrestateurRepository.findById(userId);
+        if (jeuneOpt.isPresent()) {
+            return getMoyenneNotesJeune(userId);
+        }
+        
+        // Vérifier si c'est un recruteur
+        Optional<Recruteur> recruteurOpt = recruteurRepository.findById(userId);
+        if (recruteurOpt.isPresent()) {
+            return getMoyenneNotesRecruteur(userId);
+        }
+        
+        throw new IllegalArgumentException("Utilisateur introuvable ou type non supporté");
+    }
 }

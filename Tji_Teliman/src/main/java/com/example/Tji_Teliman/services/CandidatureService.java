@@ -286,6 +286,15 @@ public class CandidatureService {
             dto.setJeunePrenom(jeune.getPrenom());
             dto.setJeuneUrlPhoto(jeune.getUrlPhoto());
             
+            // Compétences du jeune
+            if (jeune.getCompetences() != null) {
+                List<String> competences = jeune.getCompetences().stream()
+                    .filter(jc -> jc.getCompetence() != null)
+                    .map(jc -> jc.getCompetence().getNom())
+                    .collect(Collectors.toList());
+                dto.setCompetences(competences);
+            }
+            
             // Statistiques du jeune
             dto.setTotalMissionsAccomplies(getNombreMissionsAccompliesByJeune(jeune.getId()));
             

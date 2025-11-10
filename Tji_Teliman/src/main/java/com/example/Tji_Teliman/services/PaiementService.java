@@ -26,7 +26,7 @@ public class PaiementService {
     }
 
     @Transactional
-    public Paiement effectuerPaiement(Long candidatureId, Double montant) {
+    public Paiement effectuerPaiement(Long candidatureId, Double montant, String telephone) {
         Candidature candidature = candidatureRepository.findById(candidatureId)
                 .orElseThrow(() -> new IllegalArgumentException("Candidature introuvable"));
 
@@ -54,6 +54,7 @@ public class PaiementService {
 
         Paiement paiement = new Paiement();
         paiement.setMontant(montant);
+        paiement.setTelephone(telephone);
         paiement.setDatePaiement(new Date());
         paiement.setStatutPaiement(StatutPaiement.REUSSIE);
         paiement.setCandidature(candidature);
@@ -116,6 +117,7 @@ public class PaiementService {
         PaiementDTO dto = new PaiementDTO();
         dto.setId(p.getId());
         dto.setMontant(p.getMontant());
+        dto.setTelephone(p.getTelephone());
         dto.setDatePaiement(p.getDatePaiement());
         dto.setStatutPaiement(p.getStatutPaiement() == null ? null : p.getStatutPaiement().name());
         

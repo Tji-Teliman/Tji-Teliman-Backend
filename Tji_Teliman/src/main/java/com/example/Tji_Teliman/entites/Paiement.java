@@ -35,6 +35,9 @@ public class Paiement {
     @Column(nullable = false)
     private Double montant;
 
+    @Column(nullable = true)
+    private String telephone;
+
     @Temporal(TemporalType.TIMESTAMP)
     private Date datePaiement;
 

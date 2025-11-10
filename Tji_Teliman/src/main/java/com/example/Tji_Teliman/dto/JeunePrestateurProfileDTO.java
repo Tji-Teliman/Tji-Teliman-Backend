@@ -13,10 +13,12 @@ public class JeunePrestateurProfileDTO {
     private String telephone;
     private String role;
     private String genre;
+    private String statut;
     private Date dateCreation;
 
     private Date dateNaissance;
     private String localisation;
+    private String adresse;
     private String urlPhoto;
     private String carteIdentite;
 
@@ -37,12 +39,16 @@ public class JeunePrestateurProfileDTO {
     public void setRole(String role) { this.role = role; }
     public String getGenre() { return genre; }
     public void setGenre(String genre) { this.genre = genre; }
+    public String getStatut() { return statut; }
+    public void setStatut(String statut) { this.statut = statut; }
     public Date getDateCreation() { return dateCreation; }
     public void setDateCreation(Date dateCreation) { this.dateCreation = dateCreation; }
     public Date getDateNaissance() { return dateNaissance; }
     public void setDateNaissance(Date dateNaissance) { this.dateNaissance = dateNaissance; }
     public String getLocalisation() { return localisation; }
     public void setLocalisation(String localisation) { this.localisation = localisation; }
+    public String getAdresse() { return adresse; }
+    public void setAdresse(String adresse) { this.adresse = adresse; }
     public String getUrlPhoto() { return urlPhoto; }
     public void setUrlPhoto(String urlPhoto) { this.urlPhoto = urlPhoto; }
     public String getCarteIdentite() { return carteIdentite; }

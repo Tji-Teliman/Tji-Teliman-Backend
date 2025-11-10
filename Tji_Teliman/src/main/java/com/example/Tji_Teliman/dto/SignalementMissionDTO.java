@@ -11,9 +11,8 @@ public class SignalementMissionDTO {
     private String jeunePrenom;
     private String motif;
     private String description;
-    private String statut;
     private Date dateCreation;
-    private String pieceJointe;
+   
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -31,12 +30,8 @@ public class SignalementMissionDTO {
     public void setMotif(String motif) { this.motif = motif; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
-    public String getStatut() { return statut; }
-    public void setStatut(String statut) { this.statut = statut; }
     public Date getDateCreation() { return dateCreation; }
     public void setDateCreation(Date dateCreation) { this.dateCreation = dateCreation; }
-    public String getPieceJointe() { return pieceJointe; }
-    public void setPieceJointe(String pieceJointe) { this.pieceJointe = pieceJointe; }
 }
 
 

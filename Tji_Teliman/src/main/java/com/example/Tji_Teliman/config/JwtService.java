@@ -50,6 +50,19 @@ public class JwtService {
             return null;
         }
     }
+
+    public String parseUserRole(String token) {
+        try {
+            var claims = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+            return claims.get("role", String.class);
+        } catch (JwtException | IllegalArgumentException ex) {
+            return null;
+        }
+    }
 }
 
 
