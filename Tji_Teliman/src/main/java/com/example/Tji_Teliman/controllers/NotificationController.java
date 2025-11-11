@@ -141,6 +141,13 @@ public class NotificationController {
                 case DEMANDE_NOTATION_RECRUTEUR:
                     // Nom de la personne à noter (jeune prestataire) et nom de la mission
                     if (n.getCandidature() != null) {
+                        // Vérifier si la notation (recruteur -> jeune) existe déjà
+                        boolean dejaNote = notationRepository.findAll().stream()
+                            .anyMatch(not -> not.getCandidature() != null
+                                && not.getCandidature().getId().equals(n.getCandidature().getId())
+                                && not.isInitieParRecruteur()); // notation faite par recruteur
+                        dto.setNotationDejaFaite(dejaNote);
+
                         if (n.getCandidature().getJeunePrestateur() != null) {
                             dto.setPersonneANoterNom(n.getCandidature().getJeunePrestateur().getNom());
                             dto.setPersonneANoterPrenom(n.getCandidature().getJeunePrestateur().getPrenom());
@@ -154,6 +161,13 @@ public class NotificationController {
                 case DEMANDE_NOTATION_JEUNE:
                     // Nom de la personne à noter (recruteur) et nom de la mission
                     if (n.getCandidature() != null) {
+                        // Vérifier si la notation (jeune -> recruteur) existe déjà
+                        boolean dejaNote = notationRepository.findAll().stream()
+                            .anyMatch(not -> not.getCandidature() != null
+                                && not.getCandidature().getId().equals(n.getCandidature().getId())
+                                && !not.isInitieParRecruteur()); // notation faite par jeune
+                        dto.setNotationDejaFaite(dejaNote);
+
                         if (n.getCandidature().getRecruteurValidateur() != null) {
                             dto.setPersonneANoterNom(n.getCandidature().getRecruteurValidateur().getNom());
                             dto.setPersonneANoterPrenom(n.getCandidature().getRecruteurValidateur().getPrenom());
@@ -204,6 +218,25 @@ public class NotificationController {
                     }
                     break;
             }
+        }
+        
+        // Renseigner les identifiants génériques (candidature et mission)
+        if (n.getCandidature() != null) {
+            dto.setCandidatureId(n.getCandidature().getId());
+        }
+        // Récupérer la mission source (directe, via candidature, ou via paiement.candidature)
+        var mission = n.getMission() != null ? n.getMission()
+            : (n.getCandidature() != null ? n.getCandidature().getMission() : null);
+        if (mission == null && n.getPaiement() != null && n.getPaiement().getCandidature() != null) {
+            mission = n.getPaiement().getCandidature().getMission();
+        }
+        if (mission != null) {
+            dto.setMissionId(mission.getId());
+            if (dto.getMissionTitre() == null) {
+                dto.setMissionTitre(mission.getTitre());
+            }
+            dto.setMissionDateFin(mission.getDateFin());
+            dto.setMissionRemuneration(mission.getRemuneration());
         }
         
         return dto;

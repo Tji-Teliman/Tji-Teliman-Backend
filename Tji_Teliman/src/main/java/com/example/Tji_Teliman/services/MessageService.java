@@ -129,19 +129,29 @@ public class MessageService {
         // Récupérer toutes les conversations où l'utilisateur est impliqué
         List<Message> messages = messageRepository.findConversationsByUserId(userId);
         
-        // Grouper par destinataire et créer les DTOs de conversation
+        // Grouper par l'autre personne dans la conversation (pas l'utilisateur connecté)
         return messages.stream()
                 .collect(Collectors.groupingBy(msg -> {
-                    // Déterminer l'ID du destinataire basé sur qui envoie le message
-                    if (msg.isEnvoyeParRecruteur()) {
-                        return msg.getJeunePrestateur().getId();
+                    // Déterminer l'ID de l'autre personne dans la conversation par rapport à l'utilisateur connecté
+                    Long recruteurId = msg.getRecruteur().getId();
+                    Long jeuneId = msg.getJeunePrestateur().getId();
+                    
+                    // Si l'utilisateur connecté est le recruteur, l'autre personne est le jeune
+                    if (recruteurId.equals(userId)) {
+                        return jeuneId;
                     } else {
-                        return msg.getRecruteur().getId();
+                        // Si l'utilisateur connecté est le jeune, l'autre personne est le recruteur
+                        return recruteurId;
                     }
                 }))
                 .entrySet().stream()
+                .filter(entry -> {
+                    // Filtrer pour éviter les conversations avec soi-même (ne devrait pas arriver, mais sécurité)
+                    Long autrePersonneId = entry.getKey();
+                    return !autrePersonneId.equals(userId);
+                })
                 .map(entry -> {
-                    Long destinataireId = entry.getKey();
+                    Long autrePersonneId = entry.getKey();
                     List<Message> conversationMessages = entry.getValue();
                     
                     // Trouver le dernier message
@@ -150,21 +160,22 @@ public class MessageService {
                             .orElse(null);
                     
                     ConversationDTO conversation = new ConversationDTO();
-                    conversation.setDestinataireId(destinataireId);
+                    conversation.setDestinataireId(autrePersonneId);
                     conversation.setDernierMessage(dernierMessage != null ? dernierMessage.getContenu() : "");
                     conversation.setDateDernierMessage(dernierMessage != null ? dernierMessage.getDateMessage() : null);
                     conversation.setMessagesNonLus(0); // Pas de gestion des messages non lus pour le moment
                     conversation.setTypeDernierMessage(dernierMessage != null ? dernierMessage.getTypeMessage().toString() : "");
                     
-                    // Récupérer les informations du destinataire
+                    // Récupérer les informations de l'autre personne dans la conversation
                     if (dernierMessage != null) {
-                        if (dernierMessage.isEnvoyeParRecruteur()) {
-                            // Le destinataire est le jeune
+                        // Déterminer qui est l'autre personne par rapport à l'utilisateur connecté
+                        if (dernierMessage.getRecruteur().getId().equals(userId)) {
+                            // L'utilisateur connecté est le recruteur, l'autre personne est le jeune
                             conversation.setDestinataireNom(dernierMessage.getJeunePrestateur().getNom());
                             conversation.setDestinatairePrenom(dernierMessage.getJeunePrestateur().getPrenom());
                             conversation.setDestinatairePhoto(dernierMessage.getJeunePrestateur().getUrlPhoto());
                         } else {
-                            // Le destinataire est le recruteur
+                            // L'utilisateur connecté est le jeune, l'autre personne est le recruteur
                             conversation.setDestinataireNom(dernierMessage.getRecruteur().getNom());
                             conversation.setDestinatairePrenom(dernierMessage.getRecruteur().getPrenom());
                             conversation.setDestinatairePhoto(dernierMessage.getRecruteur().getUrlPhoto());

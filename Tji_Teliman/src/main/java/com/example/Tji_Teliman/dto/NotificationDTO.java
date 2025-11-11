@@ -16,7 +16,11 @@ public class NotificationDTO {
     
     // Informations contextuelles selon le type de notification
     // Pour CANDIDATURE_ACCEPTEE et MISSION_TERMINEE
+    private Long missionId;
     private String missionTitre;
+    private Long candidatureId;
+    private java.util.Date missionDateFin;
+    private Double missionRemuneration;
     
     // Pour PAIEMENT_EFFECTUE
     private Double montantPaiement;
@@ -31,6 +35,9 @@ public class NotificationDTO {
     private Integer noteRecue;
     private String personneQuiANoteNom;
     private String personneQuiANotePrenom;
+    
+    // Pour DEMANDE_NOTATION_* : indiquer si la notation a déjà été faite
+    private boolean notationDejaFaite;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -56,6 +63,17 @@ public class NotificationDTO {
     // Getters et Setters pour les champs contextuels
     public String getMissionTitre() { return missionTitre; }
     public void setMissionTitre(String missionTitre) { this.missionTitre = missionTitre; }
+    public Long getMissionId() { return missionId; }
+    public void setMissionId(Long missionId) { this.missionId = missionId; }
+    
+    public Long getCandidatureId() { return candidatureId; }
+    public void setCandidatureId(Long candidatureId) { this.candidatureId = candidatureId; }
+    
+    public java.util.Date getMissionDateFin() { return missionDateFin; }
+    public void setMissionDateFin(java.util.Date missionDateFin) { this.missionDateFin = missionDateFin; }
+    
+    public Double getMissionRemuneration() { return missionRemuneration; }
+    public void setMissionRemuneration(Double missionRemuneration) { this.missionRemuneration = missionRemuneration; }
     
     public Double getMontantPaiement() { return montantPaiement; }
     public void setMontantPaiement(Double montantPaiement) { this.montantPaiement = montantPaiement; }
@@ -80,6 +98,9 @@ public class NotificationDTO {
     
     public String getPersonneQuiANotePrenom() { return personneQuiANotePrenom; }
     public void setPersonneQuiANotePrenom(String personneQuiANotePrenom) { this.personneQuiANotePrenom = personneQuiANotePrenom; }
+    
+    public boolean isNotationDejaFaite() { return notationDejaFaite; }
+    public void setNotationDejaFaite(boolean notationDejaFaite) { this.notationDejaFaite = notationDejaFaite; }
 }
 
 
