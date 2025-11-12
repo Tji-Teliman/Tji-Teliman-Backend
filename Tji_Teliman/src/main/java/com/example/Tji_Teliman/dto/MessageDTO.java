@@ -14,6 +14,9 @@ public class MessageDTO {
     private String expediteurNom;
     private String expediteurPrenom;
     private String expediteurPhoto;
+    
+    // Statut de lecture
+    private boolean estLu;
 
     // Constructeurs
     public MessageDTO() {}
@@ -45,4 +48,7 @@ public class MessageDTO {
 
     public String getExpediteurPhoto() { return expediteurPhoto; }
     public void setExpediteurPhoto(String expediteurPhoto) { this.expediteurPhoto = expediteurPhoto; }
+
+    public boolean isEstLu() { return estLu; }
+    public void setEstLu(boolean estLu) { this.estLu = estLu; }
 }

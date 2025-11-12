@@ -4,6 +4,7 @@ import com.example.Tji_Teliman.config.JwtUtils;
 import com.example.Tji_Teliman.dto.NotificationDTO;
 import com.example.Tji_Teliman.entites.Notification;
 import com.example.Tji_Teliman.entites.Notation;
+import com.example.Tji_Teliman.entites.Recruteur;
 import com.example.Tji_Teliman.entites.Utilisateur;
 import com.example.Tji_Teliman.entites.enums.TypeNotification;
 import com.example.Tji_Teliman.repository.NotificationRepository;
@@ -110,6 +111,16 @@ public class NotificationController {
                         dto.setMissionTitre(n.getMission().getTitre());
                     } else if (n.getCandidature() != null && n.getCandidature().getMission() != null) {
                         dto.setMissionTitre(n.getCandidature().getMission().getTitre());
+                    }
+
+                    // Informations sur le recruteur (interlocuteur pour le chat)
+                    Recruteur recruteur = n.getRecruteurContextuel();
+                    if (recruteur != null) {
+                        dto.setInterlocuteurId(recruteur.getId());
+                        dto.setRecruteurId(recruteur.getId());
+                        dto.setRecruteurNom(recruteur.getNom());
+                        dto.setRecruteurPrenom(recruteur.getPrenom());
+                        dto.setRecruteurPhoto(recruteur.getUrlPhoto());
                     }
                     break;
                     
