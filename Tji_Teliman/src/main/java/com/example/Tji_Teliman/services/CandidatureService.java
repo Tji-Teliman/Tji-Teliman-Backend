@@ -2,7 +2,6 @@ package com.example.Tji_Teliman.services;
 
 import com.example.Tji_Teliman.dto.CandidatureDTO;
 import com.example.Tji_Teliman.dto.MotivationDTO;
-import com.example.Tji_Teliman.dto.ProfilCandidatureDTO;
 import com.example.Tji_Teliman.entites.Candidature;
 import com.example.Tji_Teliman.entites.JeunePrestateur;
 import com.example.Tji_Teliman.entites.Mission;
@@ -29,7 +28,6 @@ public class CandidatureService {
     private final MissionRepository missionRepository;
     private final MissionService missionService;
     private final NotificationService notificationService;
-    private final NotationService notationService;
 
     public CandidatureService(
             CandidatureRepository candidatureRepository,
@@ -37,15 +35,13 @@ public class CandidatureService {
             JeunePrestateurRepository jeunePrestateurRepository,
             MissionRepository missionRepository,
             MissionService missionService,
-            NotificationService notificationService,
-            NotationService notationService) {
+            NotificationService notificationService) {
         this.candidatureRepository = candidatureRepository;
         this.motivationRepository = motivationRepository;
         this.jeunePrestateurRepository = jeunePrestateurRepository;
         this.missionRepository = missionRepository;
         this.missionService = missionService;
         this.notificationService = notificationService;
-        this.notationService = notationService;
     }
 
     @Transactional
@@ -158,13 +154,6 @@ public class CandidatureService {
             dto.setJeunePrestateurId(candidature.getJeunePrestateur().getId());
             dto.setJeunePrestateurNom(candidature.getJeunePrestateur().getNom());
             dto.setJeunePrestateurPrenom(candidature.getJeunePrestateur().getPrenom());
-            dto.setJeunePrestateurUrlPhoto(candidature.getJeunePrestateur().getUrlPhoto());
-        }
-        
-        // Ajouter la motivation (prendre la première motivation si elle existe)
-        if (candidature.getMotivations() != null && !candidature.getMotivations().isEmpty()) {
-            Motivation firstMotivation = candidature.getMotivations().iterator().next();
-            dto.setMotivationContenu(firstMotivation.getContenu());
         }
         
         // Ajouter les informations de la mission
@@ -264,63 +253,5 @@ public class CandidatureService {
                 .filter(c -> c.getStatut() == StatutCandidature.ACCEPTEE && 
                            c.getMission().getStatut() == StatutMission.TERMINEE)
                 .count();
-    }
-
-    @Transactional(readOnly = true)
-    public ProfilCandidatureDTO getProfilCandidature(Long candidatureId) {
-        Candidature candidature = candidatureRepository.findById(candidatureId)
-                .orElseThrow(() -> new IllegalArgumentException("Candidature introuvable"));
-        
-        ProfilCandidatureDTO dto = new ProfilCandidatureDTO();
-        
-        // Informations de la candidature
-        dto.setCandidatureId(candidature.getId());
-        dto.setStatutCandidature(candidature.getStatut().name());
-        dto.setDateSoumission(candidature.getDateSoumission());
-        
-        // Informations du jeune
-        JeunePrestateur jeune = candidature.getJeunePrestateur();
-        if (jeune != null) {
-            dto.setJeuneId(jeune.getId());
-            dto.setJeuneNom(jeune.getNom());
-            dto.setJeunePrenom(jeune.getPrenom());
-            dto.setJeuneUrlPhoto(jeune.getUrlPhoto());
-            
-            // Compétences du jeune
-            if (jeune.getCompetences() != null) {
-                List<String> competences = jeune.getCompetences().stream()
-                    .filter(jc -> jc.getCompetence() != null)
-                    .map(jc -> jc.getCompetence().getNom())
-                    .collect(Collectors.toList());
-                dto.setCompetences(competences);
-            }
-            
-            // Statistiques du jeune
-            dto.setTotalMissionsAccomplies(getNombreMissionsAccompliesByJeune(jeune.getId()));
-            
-            // Moyenne des notes
-            Double moyenneNotes = notationService.getMoyenneNotesJeune(jeune.getId());
-            if (moyenneNotes != null) {
-                dto.setMoyenneNotes(moyenneNotes);
-                dto.setNombreEvaluations(notationService.getNotationsRecuesParJeune(jeune.getId()).size());
-            }
-        }
-        
-        // Motivation pour cette candidature
-        if (candidature.getMotivations() != null && !candidature.getMotivations().isEmpty()) {
-            Motivation motivation = candidature.getMotivations().iterator().next();
-            dto.setMotivationContenu(motivation.getContenu());
-            dto.setMotivationDateSoumission(motivation.getDateSoumission());
-        }
-        
-        // Informations de la mission
-        Mission mission = candidature.getMission();
-        if (mission != null) {
-            dto.setMissionId(mission.getId());
-            dto.setMissionTitre(mission.getTitre());
-            dto.setMissionDescription(mission.getDescription());
-        }
-        
-        return dto;
     }
 }

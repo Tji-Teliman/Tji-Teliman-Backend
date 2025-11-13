@@ -1,7 +1,6 @@
 package com.example.Tji_Teliman.entites;
 
 import com.example.Tji_Teliman.entites.enums.StatutMission;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -21,7 +20,6 @@ import jakarta.persistence.PreUpdate;
 import java.time.LocalTime;
 import java.util.Date;
 import java.util.Set;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.AllArgsConstructor;
@@ -86,15 +84,6 @@ public class Mission {
 
     @OneToMany(mappedBy = "mission")
     private Set<Candidature> candidatures;
-
-    @OneToMany(mappedBy = "mission")
-    @JsonIgnore
-    private List<SignalementMission> signalements;
-
-    private Integer nbSignalements;
-
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date derniereDateSignalement;
     
     private LocalTime heureDebut;
     

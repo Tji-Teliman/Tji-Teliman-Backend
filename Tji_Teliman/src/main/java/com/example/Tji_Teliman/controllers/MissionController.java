@@ -1,13 +1,9 @@
 package com.example.Tji_Teliman.controllers;
 
-import com.example.Tji_Teliman.config.JwtUtils;
 import com.example.Tji_Teliman.entites.Mission;
 import com.example.Tji_Teliman.services.MissionService;
 import com.example.Tji_Teliman.services.GoogleMapsService;
 import com.example.Tji_Teliman.dto.MissionDTO;
-import com.example.Tji_Teliman.dto.CandidatureDTO;
-import com.example.Tji_Teliman.services.CandidatureService;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.Date;
 import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -27,14 +23,10 @@ public class MissionController {
 
     private final MissionService missionService;
     private final GoogleMapsService googleMapsService;
-    private final JwtUtils jwtUtils;
-    private final CandidatureService candidatureService;
 
-    public MissionController(MissionService missionService, GoogleMapsService googleMapsService, JwtUtils jwtUtils, CandidatureService candidatureService) {
+    public MissionController(MissionService missionService, GoogleMapsService googleMapsService) {
         this.missionService = missionService;
         this.googleMapsService = googleMapsService;
-        this.jwtUtils = jwtUtils;
-        this.candidatureService = candidatureService;
     }
 
     public record CreateMissionRequest(
@@ -55,14 +47,9 @@ public class MissionController {
 
     public record ApiResponse(boolean success, String message, Object data) {}
 
-    // Créer une mission (recruteur connecté)
-    @PostMapping("/creer")
-    public ResponseEntity<?> create(@RequestBody CreateMissionRequest req, HttpServletRequest httpRequest) {
+    @PostMapping("/recruteur/{recruteurId}")
+    public ResponseEntity<?> create(@PathVariable Long recruteurId, @RequestBody CreateMissionRequest req) {
         try {
-            Long recruteurId = jwtUtils.getUserIdFromToken(httpRequest);
-            if (recruteurId == null) {
-                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
-            }
             Mission m = missionService.create(recruteurId, req.titre(), req.description(), req.exigence(), req.dateDebut(), req.dateFin(), req.remuneration(), req.categorieNom(), req.heureDebut(), req.heureFin(), req.latitude(), req.longitude(), req.adresse(), req.placeId());
             MissionDTO dto = missionService.toDTO(m);
             return ResponseEntity.ok(new ApiResponse(true, "Mission créée", dto));
@@ -71,19 +58,16 @@ public class MissionController {
         }
     }
 
-    // Lister toutes les missions
     @GetMapping("/all")
     public ResponseEntity<List<MissionDTO>> listAll() {
         return ResponseEntity.ok(missionService.listAll().stream().map(missionService::toDTO).toList());
     }
 
-    // Lister les missions en attente
     @GetMapping("/en-attente")
     public ResponseEntity<List<MissionDTO>> listEnAttente() {
         return ResponseEntity.ok(missionService.listEnAttente().stream().map(missionService::toDTO).toList());
     }
 
-    // Obtenir une mission par son ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Long id) {
         try {
@@ -93,73 +77,20 @@ public class MissionController {
         }
     }
 
-    // Lister les missions du recruteur connecté
-    @GetMapping("/mes-missions")
-    public ResponseEntity<?> listByRecruteur(HttpServletRequest httpRequest) {
-        try {
-            Long recruteurId = jwtUtils.getUserIdFromToken(httpRequest);
-            if (recruteurId == null) {
-                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
-            }
-            List<MissionDTO> missions = missionService.listByRecruteur(recruteurId).stream().map(missionService::toDTO).toList();
-            return ResponseEntity.ok(new ApiResponse(true, "Mes missions", missions));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
-        }
+    @GetMapping("/recruteur/{recruteurId}")
+    public ResponseEntity<List<MissionDTO>> listByRecruteur(@PathVariable Long recruteurId) {
+        return ResponseEntity.ok(missionService.listByRecruteur(recruteurId).stream().map(missionService::toDTO).toList());
     }
 
-    // Obtenir les statistiques du recruteur (total + missions)
-    @GetMapping("/mes-stats")
-    public ResponseEntity<?> getMissionsByRecruteurWithCount(HttpServletRequest httpRequest) {
-        try {
-            Long recruteurId = jwtUtils.getUserIdFromToken(httpRequest);
-            if (recruteurId == null) {
-                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
-            }
-            var missions = missionService.listByRecruteur(recruteurId).stream().map(missionService::toDTO).toList();
-            var resp = new java.util.HashMap<String, Object>();
-            resp.put("total", missions.size());
-            resp.put("missions", missions);
-            return ResponseEntity.ok(new ApiResponse(true, "Mes statistiques de missions", resp));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
-        }
+    @GetMapping("/recruteur/{recruteurId}/stats")
+    public ResponseEntity<?> getMissionsByRecruteurWithCount(@PathVariable Long recruteurId) {
+        var missions = missionService.listByRecruteur(recruteurId).stream().map(missionService::toDTO).toList();
+        var resp = new java.util.HashMap<String, Object>();
+        resp.put("total", missions.size());
+        resp.put("missions", missions);
+        return ResponseEntity.ok(new ApiResponse(true, "Missions du recruteur", resp));
     }
 
-    // Lister les missions accomplies par le jeune connecté (avec nombre)
-    @GetMapping("/mes-missions-accomplies")
-    public ResponseEntity<?> getMissionsAccompliesByJeune(HttpServletRequest httpRequest) {
-        try {
-            Long jeuneId = jwtUtils.getUserIdFromToken(httpRequest);
-            if (jeuneId == null) {
-                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
-            }
-            List<CandidatureDTO> missionsAccomplies = candidatureService.getMissionsAccompliesByJeune(jeuneId);
-            Long nombreMissions = candidatureService.getNombreMissionsAccompliesByJeune(jeuneId);
-            
-            var response = new java.util.HashMap<String, Object>();
-            response.put("nombreMissions", nombreMissions);
-            response.put("missions", missionsAccomplies);
-            
-            return ResponseEntity.ok(new ApiResponse(true, "Missions accomplies récupérées", response));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
-        }
-    }
-
-    // Terminer une mission
-    @PutMapping("/{id}/terminer")
-    public ResponseEntity<?> terminerMission(@PathVariable Long id) {
-        try {
-            Mission mission = missionService.terminerMission(id);
-            MissionDTO dto = missionService.toDTO(mission);
-            return ResponseEntity.ok(new ApiResponse(true, "Mission terminée avec succès", dto));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
-        }
-    }
-
-    // Mettre à jour une mission
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody CreateMissionRequest req) {
         try {
@@ -171,7 +102,6 @@ public class MissionController {
         }
     }
 
-    // Supprimer une mission
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         try {
@@ -181,9 +111,7 @@ public class MissionController {
             return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
         }
     }
-    
 
-    // Déclencher la vérification des missions terminées
     @PostMapping("/verifier-terminaison")
     public ResponseEntity<?> verifierTerminaison() {
         missionService.verifierMissionsTerminees();
@@ -194,7 +122,6 @@ public class MissionController {
      * Endpoint pour le géocodage inverse : convertir lat/lng en placeId et adresse
      * Utile quand le frontend a seulement les coordonnées du clic sur la carte
      */
-    // Géocodage inverse (lat/lng -> placeId et adresse)
     @PostMapping("/reverse-geocode")
     public ResponseEntity<?> reverseGeocode(@RequestBody ReverseGeocodeRequest req) {
         try {

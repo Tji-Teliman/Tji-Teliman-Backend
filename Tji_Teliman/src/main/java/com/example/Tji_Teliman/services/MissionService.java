@@ -5,8 +5,6 @@ import com.example.Tji_Teliman.entites.Mission;
 import com.example.Tji_Teliman.entites.Recruteur;
 import com.example.Tji_Teliman.entites.enums.StatutMission;
 import com.example.Tji_Teliman.dto.MissionDTO;
-import com.example.Tji_Teliman.config.FilePathConverter;
-import com.example.Tji_Teliman.repository.CandidatureRepository;
 import com.example.Tji_Teliman.repository.CategorieRepository;
 import com.example.Tji_Teliman.repository.MissionRepository;
 import com.example.Tji_Teliman.repository.RecruteurRepository;
@@ -21,23 +19,15 @@ public class MissionService {
     private final MissionRepository missionRepository;
     private final RecruteurRepository recruteurRepository;
     private final CategorieRepository categorieRepository;
-    private final CandidatureRepository candidatureRepository;
     private final NotificationService notificationService;
-    private final PaiementService paiementService;
     private final GoogleMapsService googleMapsService;
-    private final NotationService notationService;
-    private final FilePathConverter filePathConverter;
 
-    public MissionService(MissionRepository missionRepository, RecruteurRepository recruteurRepository, CategorieRepository categorieRepository, CandidatureRepository candidatureRepository, NotificationService notificationService, PaiementService paiementService, GoogleMapsService googleMapsService, NotationService notationService, FilePathConverter filePathConverter) {
+    public MissionService(MissionRepository missionRepository, RecruteurRepository recruteurRepository, CategorieRepository categorieRepository, NotificationService notificationService, GoogleMapsService googleMapsService) {
         this.missionRepository = missionRepository;
         this.recruteurRepository = recruteurRepository;
         this.categorieRepository = categorieRepository;
-        this.candidatureRepository = candidatureRepository;
         this.notificationService = notificationService;
-        this.paiementService = paiementService;
         this.googleMapsService = googleMapsService;
-        this.notationService = notationService;
-        this.filePathConverter = filePathConverter;
     }
 
     @Transactional
@@ -161,20 +151,11 @@ public class MissionService {
             dto.setCategorieNom(m.getCategorie().getNom());
             dto.setCategorieUrlPhoto(m.getCategorie().getUrlPhoto());
         }
-        // Compter le nombre de candidatures pour cette mission
-        dto.setNombreCandidatures((long) candidatureRepository.findByMission(m).size());
-        
-        // Remplir les informations du recruteur
         if (m.getRecruteur() != null) {
-            Recruteur recruteur = m.getRecruteur();
-            dto.setRecruteurNom(recruteur.getNom());
-            dto.setRecruteurPrenom(recruteur.getPrenom());
-            dto.setRecruteurUrlPhoto(recruteur.getUrlPhoto());
-            // Obtenir la note moyenne du recruteur
-            Double moyenneNote = notationService.getMoyenneNotesRecruteur(recruteur.getId());
-            dto.setRecruteurNote(moyenneNote);
+            dto.setRecruteurId(m.getRecruteur().getId());
+            dto.setRecruteurNom(m.getRecruteur().getNom());
+            dto.setRecruteurPrenom(m.getRecruteur().getPrenom());
         }
-        
         return dto;
     }
 
@@ -182,11 +163,6 @@ public class MissionService {
     public MissionDTO getById(Long id) {
         Mission m = missionRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Mission introuvable"));
         return toDTO(m);
-    }
-
-    @Transactional(readOnly = true)
-    public Long countCandidaturesByMission(Long missionId) {
-        return (long) candidatureRepository.findByMission(missionRepository.findById(missionId).orElseThrow(() -> new IllegalArgumentException("Mission introuvable"))).size();
     }
 
     @Transactional
@@ -209,7 +185,6 @@ public class MissionService {
                     mission.setStatut(StatutMission.TERMINEE);
                     missionRepository.save(mission);
                     notificationService.notifyMissionTerminee(mission.getRecruteur(), mission);
-                    paiementService.createPendingPaiementsForMission(mission);
                 }
             }
         }
@@ -223,23 +198,5 @@ public class MissionService {
         cal.set(java.util.Calendar.SECOND, 0);
         cal.set(java.util.Calendar.MILLISECOND, 0);
         return cal.getTime();
-    }
-
-    /**
-     * Terminer une mission (changer le statut à TERMINEE) - Version simple pour test
-     */
-    @Transactional
-    public Mission terminerMission(Long missionId) {
-        Mission mission = missionRepository.findById(missionId)
-                .orElseThrow(() -> new IllegalArgumentException("Mission introuvable"));
-        
-        mission.setStatut(StatutMission.TERMINEE);
-        Mission savedMission = missionRepository.save(mission);
-        
-        // Notifier le recruteur que la mission est terminée et qu'il doit effectuer le paiement
-        notificationService.notifyMissionTerminee(mission.getRecruteur(), savedMission);
-        paiementService.createPendingPaiementsForMission(savedMission);
-        
-        return savedMission;
     }
 }

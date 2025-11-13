@@ -14,7 +14,6 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import jakarta.persistence.PrePersist;
-import jakarta.persistence.Transient;
 import java.util.Date;
 import lombok.Getter;
 import lombok.Setter;
@@ -64,24 +63,6 @@ public class Notification {
     @ManyToOne
     @JoinColumn(name = "paiement_id")
     private Paiement paiement; // Contexte éventuel
-
-    /**
-     * Raccourci pour récupérer le recruteur associé au contexte de la notification
-     * sans requête supplémentaire.
-     */
-    @Transient
-    public Recruteur getRecruteurContextuel() {
-        if (candidature != null && candidature.getRecruteurValidateur() != null) {
-            return candidature.getRecruteurValidateur();
-        }
-        if (mission != null && mission.getRecruteur() != null) {
-            return mission.getRecruteur();
-        }
-        if (paiement != null && paiement.getRecruteur() != null) {
-            return paiement.getRecruteur();
-        }
-        return null;
-    }
 
     @PrePersist
     private void onCreate() {

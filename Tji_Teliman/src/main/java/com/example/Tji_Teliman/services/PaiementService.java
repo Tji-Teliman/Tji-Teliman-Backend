@@ -6,8 +6,6 @@ import com.example.Tji_Teliman.entites.enums.StatutPaiement;
 import com.example.Tji_Teliman.dto.PaiementDTO;
 import com.example.Tji_Teliman.repository.CandidatureRepository;
 import com.example.Tji_Teliman.repository.PaiementRepository;
-import com.example.Tji_Teliman.entites.Mission;
-import com.example.Tji_Teliman.entites.enums.StatutCandidature;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +26,7 @@ public class PaiementService {
     }
 
     @Transactional
-    public Paiement effectuerPaiement(Long candidatureId, Double montant, String telephone) {
+    public Paiement effectuerPaiement(Long candidatureId, Double montant) {
         Candidature candidature = candidatureRepository.findById(candidatureId)
                 .orElseThrow(() -> new IllegalArgumentException("Candidature introuvable"));
 
@@ -42,6 +40,11 @@ public class PaiementService {
             throw new IllegalArgumentException("Le paiement ne peut être effectué que pour une mission terminée");
         }
 
+        // Vérifier qu'il n'y a pas déjà un paiement pour cette candidature
+        if (candidature.getPaiement() != null) {
+            throw new IllegalArgumentException("Un paiement a déjà été effectué pour cette candidature");
+        }
+
         // Vérifier que le montant correspond à la rémunération de la mission
         if (candidature.getMission().getRemuneration() != null && 
             !candidature.getMission().getRemuneration().equals(montant)) {
@@ -49,17 +52,12 @@ public class PaiementService {
                 candidature.getMission().getRemuneration() + ")");
         }
 
-        Paiement paiement = candidature.getPaiement();
-        if (paiement == null) {
-            paiement = createPendingPaiement(candidature);
-        } else if (paiement.getStatutPaiement() == StatutPaiement.REUSSIE) {
-            throw new IllegalArgumentException("Un paiement a déjà été effectué pour cette candidature");
-        }
-
+        Paiement paiement = new Paiement();
         paiement.setMontant(montant);
-        paiement.setTelephone(telephone);
         paiement.setDatePaiement(new Date());
         paiement.setStatutPaiement(StatutPaiement.REUSSIE);
+        paiement.setCandidature(candidature);
+        paiement.setRecruteur(candidature.getRecruteurValidateur());
 
         Paiement saved = paiementRepository.save(paiement);
 
@@ -107,9 +105,9 @@ public class PaiementService {
     }
 
     @Transactional(readOnly = true)
-    public List<PaiementDTO> getPaiementsByStatut(StatutPaiement statut) {
-        return paiementRepository.findByStatutPaiement(statut).stream()
-                .map(this::toDTO)
+    public List<Paiement> getPaiementsByStatut(StatutPaiement statut) {
+        return paiementRepository.findAll().stream()
+                .filter(p -> p.getStatutPaiement() == statut)
                 .toList();
     }
 
@@ -118,7 +116,6 @@ public class PaiementService {
         PaiementDTO dto = new PaiementDTO();
         dto.setId(p.getId());
         dto.setMontant(p.getMontant());
-        dto.setTelephone(p.getTelephone());
         dto.setDatePaiement(p.getDatePaiement());
         dto.setStatutPaiement(p.getStatutPaiement() == null ? null : p.getStatutPaiement().name());
         
@@ -129,16 +126,12 @@ public class PaiementService {
                 dto.setJeunePrestateurId(p.getCandidature().getJeunePrestateur().getId());
                 dto.setJeunePrestateurNom(p.getCandidature().getJeunePrestateur().getNom());
                 dto.setJeunePrestateurPrenom(p.getCandidature().getJeunePrestateur().getPrenom());
-                dto.setJeunePrestateurTelephone(p.getCandidature().getJeunePrestateur().getTelephone());
             }
             
             if (p.getCandidature().getMission() != null) {
                 dto.setMissionId(p.getCandidature().getMission().getId());
                 dto.setMissionTitre(p.getCandidature().getMission().getTitre());
                 dto.setMissionRemuneration(p.getCandidature().getMission().getRemuneration());
-                dto.setMissionStatut(p.getCandidature().getMission().getStatut() != null ? p.getCandidature().getMission().getStatut().name() : null);
-                dto.setMissionDateDebut(p.getCandidature().getMission().getDateDebut());
-                dto.setMissionDateFin(p.getCandidature().getMission().getDateFin());
             }
         }
         
@@ -149,37 +142,5 @@ public class PaiementService {
         }
         
         return dto;
-    }
-
-    @Transactional
-    public void createPendingPaiementsForMission(Mission mission) {
-        if (mission == null) return;
-        candidatureRepository.findByMission(mission).stream()
-            .filter(c -> c.getStatut() == StatutCandidature.ACCEPTEE)
-            .forEach(this::createPendingPaiement);
-    }
-
-    @Transactional
-    public Paiement createPendingPaiement(Candidature candidature) {
-        if (candidature == null) {
-            throw new IllegalArgumentException("Candidature invalide");
-        }
-        Paiement existing = candidature.getPaiement();
-        if (existing != null) {
-            return existing;
-        }
-
-        Paiement paiement = new Paiement();
-        paiement.setMontant(candidature.getMission() != null ? candidature.getMission().getRemuneration() : null);
-        paiement.setTelephone(null);
-        paiement.setDatePaiement(null);
-        paiement.setStatutPaiement(StatutPaiement.EN_ATTENTE);
-        paiement.setCandidature(candidature);
-        paiement.setRecruteur(candidature.getRecruteurValidateur());
-
-        Paiement saved = paiementRepository.save(paiement);
-        candidature.setPaiement(saved);
-        candidatureRepository.save(candidature);
-        return saved;
     }
 }
