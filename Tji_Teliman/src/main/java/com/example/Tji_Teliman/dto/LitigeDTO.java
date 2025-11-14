@@ -19,6 +19,7 @@ public class LitigeDTO {
     private String decisionAdministrateur;
     private LocalDateTime dateCreation;
     private LocalDateTime dateResolution;
+    private String documentUrl;
 
     // Constructeurs
     public LitigeDTO() {}
@@ -71,4 +72,7 @@ public class LitigeDTO {
 
     public LocalDateTime getDateResolution() { return dateResolution; }
     public void setDateResolution(LocalDateTime dateResolution) { this.dateResolution = dateResolution; }
+
+    public String getDocumentUrl() { return documentUrl; }
+    public void setDocumentUrl(String documentUrl) { this.documentUrl = documentUrl; }
 }

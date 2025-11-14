@@ -50,6 +50,10 @@ public class Litige {
     private LocalDateTime dateCreation;
     private LocalDateTime dateResolution;
 
+    @Column(name = "document_url")
+    private String documentUrl;
+
+
     // Constructeurs
     public Litige() {
         this.dateCreation = LocalDateTime.now();
@@ -98,4 +102,9 @@ public class Litige {
 
     public LocalDateTime getDateResolution() { return dateResolution; }
     public void setDateResolution(LocalDateTime dateResolution) { this.dateResolution = dateResolution; }
+
+    public String getDocumentUrl() { return documentUrl; }
+    public void setDocumentUrl(String documentUrl) { this.documentUrl = documentUrl; }
+
+    
 }
