@@ -146,10 +146,10 @@ public class MessageController {
             List<MessageDTO> messages;
             if (estRecruteur) {
                 // Recruteur lit conversation avec jeune
-                messages = messageService.lireMessages(userId, destinataireId);
+                messages = messageService.lireMessages(userId, destinataireId, userId);
             } else {
                 // Jeune lit conversation avec recruteur
-                messages = messageService.lireMessages(destinataireId, userId);
+                messages = messageService.lireMessages(destinataireId, userId, userId);
             }
             
             return ResponseEntity.ok(new ApiResponse(true, "Messages récupérés", messages));
@@ -208,6 +208,57 @@ public class MessageController {
 
             MessageDTO messageDTO = messageService.getMessageById(messageId);
             return ResponseEntity.ok(new ApiResponse(true, "Message récupéré", messageDTO));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(new ApiResponse(false, "Erreur: " + e.getMessage(), null));
+        }
+    }
+
+    // Marquer un message comme lu
+    @PutMapping("/{messageId}/lu")
+    public ResponseEntity<?> marquerCommeLu(
+            @PathVariable Long messageId,
+            HttpServletRequest httpRequest) {
+        try {
+            Long userId = jwtUtils.getUserIdFromToken(httpRequest);
+            if (userId == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
+            }
+
+            messageService.marquerCommeLu(messageId, userId);
+            return ResponseEntity.ok(new ApiResponse(true, "Message marqué comme lu", null));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage(), null));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(new ApiResponse(false, "Erreur: " + e.getMessage(), null));
+        }
+    }
+
+    // Marquer tous les messages d'une conversation comme lus
+    @PutMapping("/conversation/{destinataireId}/lue")
+    public ResponseEntity<?> marquerConversationCommeLue(
+            @PathVariable Long destinataireId,
+            HttpServletRequest httpRequest) {
+        try {
+            Long userId = jwtUtils.getUserIdFromToken(httpRequest);
+            if (userId == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
+            }
+
+            // Déterminer le type d'utilisateur
+            UserProfileDTO userProfile = profileService.getUserProfile(userId);
+            boolean estRecruteur = userProfile.getRole().equals("RECRUTEUR");
+
+            if (estRecruteur) {
+                // Recruteur marque conversation avec jeune
+                messageService.marquerConversationCommeLue(userId, destinataireId, userId);
+            } else {
+                // Jeune marque conversation avec recruteur
+                messageService.marquerConversationCommeLue(destinataireId, userId, userId);
+            }
+
+            return ResponseEntity.ok(new ApiResponse(true, "Conversation marquée comme lue", null));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(new ApiResponse(false, "Erreur: " + e.getMessage(), null));

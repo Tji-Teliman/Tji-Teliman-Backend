@@ -26,6 +26,9 @@ public class MessageMapper {
             dto.setExpediteurPrenom(message.getJeunePrestateur().getPrenom());
             dto.setExpediteurPhoto(convertToRelativePath(message.getJeunePrestateur().getUrlPhoto()));
         }
+        
+        // Statut de lecture
+        dto.setEstLu(message.isEstLu());
 
         return dto;
     }

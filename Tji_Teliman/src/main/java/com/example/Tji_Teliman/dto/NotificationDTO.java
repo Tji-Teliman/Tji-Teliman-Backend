@@ -13,6 +13,11 @@ public class NotificationDTO {
     private Long destinataireId;
     private String destinataireNom;
     private String destinatairePrenom;
+    private Long interlocuteurId; // Id utilisé côté chat (ex: recruteur à contacter)
+    private Long recruteurId;
+    private String recruteurNom;
+    private String recruteurPrenom;
+    private String recruteurPhoto;
     
     // Informations contextuelles selon le type de notification
     // Pour CANDIDATURE_ACCEPTEE et MISSION_TERMINEE
@@ -59,6 +64,16 @@ public class NotificationDTO {
     public void setDestinataireNom(String destinataireNom) { this.destinataireNom = destinataireNom; }
     public String getDestinatairePrenom() { return destinatairePrenom; }
     public void setDestinatairePrenom(String destinatairePrenom) { this.destinatairePrenom = destinatairePrenom; }
+    public Long getInterlocuteurId() { return interlocuteurId; }
+    public void setInterlocuteurId(Long interlocuteurId) { this.interlocuteurId = interlocuteurId; }
+    public Long getRecruteurId() { return recruteurId; }
+    public void setRecruteurId(Long recruteurId) { this.recruteurId = recruteurId; }
+    public String getRecruteurNom() { return recruteurNom; }
+    public void setRecruteurNom(String recruteurNom) { this.recruteurNom = recruteurNom; }
+    public String getRecruteurPrenom() { return recruteurPrenom; }
+    public void setRecruteurPrenom(String recruteurPrenom) { this.recruteurPrenom = recruteurPrenom; }
+    public String getRecruteurPhoto() { return recruteurPhoto; }
+    public void setRecruteurPhoto(String recruteurPhoto) { this.recruteurPhoto = recruteurPhoto; }
     
     // Getters et Setters pour les champs contextuels
     public String getMissionTitre() { return missionTitre; }

@@ -68,11 +68,16 @@ public class Message {
     @Temporal(TemporalType.TIMESTAMP)
     private Date dateMessage;
 
+    @Column(nullable = false)
+    private boolean estLu = false;
+
     @PrePersist
     private void onCreate() {
         if (dateMessage == null) {
             dateMessage = new Date();
         }
+        
+        // Par défaut, un message n'est pas lu à sa création (déjà initialisé à false)
 
         // Validation de cohérence selon le type de message
         if (typeMessage == MessageType.VOICE && voiceFileUrl == null) {

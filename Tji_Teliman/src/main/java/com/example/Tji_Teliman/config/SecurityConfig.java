@@ -24,50 +24,50 @@ public class SecurityConfig implements WebMvcConfigurer {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll()
-            );
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .authorizeHttpRequests(auth -> auth
+                        .anyRequest().permitAll()
+                );
         return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        
+
         // Autoriser toutes les origines pour le développement (Flutter Web, Mobile, etc.)
         // Utiliser setAllowedOriginPatterns pour permettre * avec allowCredentials
         configuration.setAllowedOriginPatterns(List.of("*"));
-        
+
         // Méthodes HTTP autorisées
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"));
-        
+
         // Headers autorisés (important pour Flutter avec Authorization token)
         configuration.setAllowedHeaders(Arrays.asList(
-            "Authorization",
-            "Content-Type",
-            "X-Requested-With",
-            "accept",
-            "Origin",
-            "Access-Control-Request-Method",
-            "Access-Control-Request-Headers"
+                "Authorization",
+                "Content-Type",
+                "X-Requested-With",
+                "accept",
+                "Origin",
+                "Access-Control-Request-Method",
+                "Access-Control-Request-Headers"
         ));
-        
+
         // Headers exposés pour le client
         configuration.setExposedHeaders(Arrays.asList(
-            "Authorization",
-            "Content-Type",
-            "Access-Control-Allow-Origin",
-            "Access-Control-Allow-Credentials"
+                "Authorization",
+                "Content-Type",
+                "Access-Control-Allow-Origin",
+                "Access-Control-Allow-Credentials"
         ));
-        
+
         // Permettre les credentials (cookies, tokens)
         configuration.setAllowCredentials(true);
-        
+
         // Cache la réponse preflight pendant 1 heure
         configuration.setMaxAge(3600L);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
@@ -90,24 +90,22 @@ public class SecurityConfig implements WebMvcConfigurer {
         Path uploadsPath = Paths.get("uploads").toAbsolutePath().normalize();
         // Format correct pour Windows et Unix/Linux
         String uploadsLocation = "file:" + uploadsPath.toString().replace("\\", "/") + "/";
-        
+
         // Ajouter le ResourceHandler pour servir les fichiers statiques
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations(uploadsLocation)
                 .setCachePeriod(3600) // Cache pour 1 heure
                 .resourceChain(true); // Activer la chaîne de ressources pour meilleure performance
-        
+
         // Log pour debug (peut être retiré en production)
         System.out.println("Configuration ResourceHandler - Chemin uploads: " + uploadsLocation);
         System.out.println("Chemin absolu normalisé: " + uploadsPath.toString());
     }
-    
+
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(userStatusInterceptor)
-            .addPathPatterns("/api/**")
-            .excludePathPatterns("/api/auth/**", "/uploads/**"); // Exclure les fichiers uploadés de l'intercepteur
+                .addPathPatterns("/api/**")
+                .excludePathPatterns("/api/auth/**", "/uploads/**"); // Exclure les fichiers uploadés de l'intercepteur
     }
 }
-
-

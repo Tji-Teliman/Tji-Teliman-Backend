@@ -98,10 +98,20 @@ public class MessageService {
     }
 
     // 🔵 3. Lire tous les messages entre un recruteur et un jeune prestataire
-    public List<MessageDTO> lireMessages(Long recruteurId, Long jeunePrestateurId) {
+    @Transactional
+    public List<MessageDTO> lireMessages(Long recruteurId, Long jeunePrestateurId, Long utilisateurConnecteId) {
         List<Message> messages = messageRepository.findAllByRecruteurIdAndJeunePrestateurIdOrderByDateMessageAsc(
                 recruteurId, jeunePrestateurId
         );
+
+        // Marquer comme lus tous les messages reçus par l'utilisateur connecté (pas ceux qu'il a envoyés)
+        for (Message message : messages) {
+            Long destinataireId = message.getIdDestinataire();
+            if (destinataireId.equals(utilisateurConnecteId) && !message.isEstLu()) {
+                message.setEstLu(true);
+                messageRepository.save(message);
+            }
+        }
 
         return messages.stream()
                 .map(messageMapper::toDto)
@@ -163,7 +173,16 @@ public class MessageService {
                     conversation.setDestinataireId(autrePersonneId);
                     conversation.setDernierMessage(dernierMessage != null ? dernierMessage.getContenu() : "");
                     conversation.setDateDernierMessage(dernierMessage != null ? dernierMessage.getDateMessage() : null);
-                    conversation.setMessagesNonLus(0); // Pas de gestion des messages non lus pour le moment
+                    
+                    // Compter les messages non lus reçus par l'utilisateur connecté dans cette conversation
+                    long messagesNonLus = conversationMessages.stream()
+                            .filter(msg -> {
+                                Long destinataireId = msg.getIdDestinataire();
+                                return destinataireId.equals(userId) && !msg.isEstLu();
+                            })
+                            .count();
+                    conversation.setMessagesNonLus((int) messagesNonLus);
+                    
                     conversation.setTypeDernierMessage(dernierMessage != null ? dernierMessage.getTypeMessage().toString() : "");
                     
                     // Récupérer les informations de l'autre personne dans la conversation
@@ -193,6 +212,41 @@ public class MessageService {
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() -> new RuntimeException("Message non trouvé"));
         return messageMapper.toDto(message);
+    }
+
+    // 🔵 8. Marquer un message comme lu
+    @Transactional
+    public void marquerCommeLu(Long messageId, Long utilisateurConnecteId) {
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new RuntimeException("Message non trouvé"));
+        
+        // Vérifier que l'utilisateur connecté est bien le destinataire du message
+        Long destinataireId = message.getIdDestinataire();
+        if (!destinataireId.equals(utilisateurConnecteId)) {
+            throw new RuntimeException("Vous ne pouvez marquer comme lu que les messages que vous avez reçus");
+        }
+        
+        if (!message.isEstLu()) {
+            message.setEstLu(true);
+            messageRepository.save(message);
+        }
+    }
+
+    // 🔵 9. Marquer tous les messages d'une conversation comme lus
+    @Transactional
+    public void marquerConversationCommeLue(Long recruteurId, Long jeunePrestateurId, Long utilisateurConnecteId) {
+        List<Message> messages = messageRepository.findAllByRecruteurIdAndJeunePrestateurIdOrderByDateMessageAsc(
+                recruteurId, jeunePrestateurId
+        );
+        
+        // Marquer comme lus tous les messages reçus par l'utilisateur connecté
+        for (Message message : messages) {
+            Long destinataireId = message.getIdDestinataire();
+            if (destinataireId.equals(utilisateurConnecteId) && !message.isEstLu()) {
+                message.setEstLu(true);
+                messageRepository.save(message);
+            }
+        }
     }
 }
 
