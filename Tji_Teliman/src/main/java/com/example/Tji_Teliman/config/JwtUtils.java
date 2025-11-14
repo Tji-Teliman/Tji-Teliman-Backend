@@ -1,61 +1,65 @@
 package com.example.Tji_Teliman.config;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
 
 @Component
-public class JwtUtils {
+public class JwtUtils extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final UserDetailsService userDetailsService;
 
-    public JwtUtils(JwtService jwtService) {
+    public JwtUtils(JwtService jwtService, UserDetailsService userDetailsService) {
         this.jwtService = jwtService;
+        this.userDetailsService = userDetailsService;
     }
 
-    /**
-     * Extrait l'ID utilisateur du token JWT présent dans l'en-tête Authorization
-     * @param request La requête HTTP
-     * @return L'ID utilisateur ou null si le token est invalide/absent
-     */
-    public Long getUserIdFromToken(HttpServletRequest request) {
-        String auth = request.getHeader("Authorization");
-        if (auth == null || !auth.startsWith("Bearer ")) {
-            return null;
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
+
+        final String authHeader = request.getHeader("Authorization");
+        final String jwt;
+        final String username;
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
         }
-        String token = auth.substring(7);
-        return jwtService.parseUserId(token);
-    }
 
-    /**
-     * Extrait le rôle utilisateur du token JWT présent dans l'en-tête Authorization
-     * @param request La requête HTTP
-     * @return Le rôle utilisateur ou null si le token est invalide/absent
-     */
-    public String getUserRoleFromToken(HttpServletRequest request) {
-        String auth = request.getHeader("Authorization");
-        if (auth == null || !auth.startsWith("Bearer ")) {
-            return null;
+        jwt = authHeader.substring(7);
+        username = jwtService.extractUsername(jwt);
+
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+
+            if (jwtService.isTokenValid(jwt, userDetails)) {
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities()
+                );
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+            }
         }
-        String token = auth.substring(7);
-        return jwtService.parseUserRole(token);
+
+        filterChain.doFilter(request, response);
     }
 
-    /**
-     * Vérifie si l'utilisateur est authentifié (token valide présent)
-     * @param request La requête HTTP
-     * @return true si l'utilisateur est authentifié, false sinon
-     */
-    public boolean isAuthenticated(HttpServletRequest request) {
-        return getUserIdFromToken(request) != null;
-    }
+    public Long getUserIdFromToken(HttpServletRequest httpRequest) {
 
-    /**
-     * Vérifie si l'utilisateur est un administrateur
-     * @param request La requête HTTP
-     * @return true si l'utilisateur est un administrateur, false sinon
-     */
-    public boolean isAdmin(HttpServletRequest request) {
-        String role = getUserRoleFromToken(request);
-        return "ADMINISTRATEUR".equals(role);
     }
 }

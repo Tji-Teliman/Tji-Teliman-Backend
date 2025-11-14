@@ -26,7 +26,7 @@ public class TjiTelimanApplication {
                 Administrateur a = new Administrateur();
                 a.setNom("Bagayoko");
                 a.setPrenom("Amadou");
-                a.setEmail("abagayoko304@mail.com");
+                a.setEmail("abagayoko304@gmail.com");
                 a.setTelephone("70000000");
                 a.setGenre(TypeGenre.MASCULIN);
                 a.setMotDePasse(encoder.encode("Tji_Teliman123"));
