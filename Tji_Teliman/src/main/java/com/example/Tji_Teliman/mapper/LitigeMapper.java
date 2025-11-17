@@ -1,6 +1,5 @@
 package com.example.Tji_Teliman.mapper;
 
-
 import com.example.Tji_Teliman.dto.LitigeDTO;
 import com.example.Tji_Teliman.entites.Litige;
 import org.springframework.stereotype.Component;
@@ -20,6 +19,7 @@ public class LitigeMapper {
         dto.setDecisionAdministrateur(litige.getDecisionAdministrateur());
         dto.setDateCreation(litige.getDateCreation());
         dto.setDateResolution(litige.getDateResolution());
+        dto.setDocumentUrl(litige.getDocumentUrl());
 
         if (litige.getType() != null) {
             dto.setType(litige.getType().name());

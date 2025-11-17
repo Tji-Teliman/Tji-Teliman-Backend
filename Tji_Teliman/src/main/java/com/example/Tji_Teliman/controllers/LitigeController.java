@@ -1,13 +1,16 @@
 package com.example.Tji_Teliman.controllers;
 
-
 import com.example.Tji_Teliman.dto.*;
-        import com.example.Tji_Teliman.services.LitigeService;
+import com.example.Tji_Teliman.services.LitigeService;
+import com.example.Tji_Teliman.config.JwtUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 
-        import java.util.List;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/litiges")
@@ -16,11 +19,55 @@ public class LitigeController {
     @Autowired
     private LitigeService litigeService;
 
-    //  Créer un litige
-    @PostMapping
-    public ResponseEntity<LitigeDTO> creerLitige(@RequestBody CreationLitigeDTO dto) {
-        LitigeDTO litige = litigeService.creerLitige(dto);
-        return ResponseEntity.ok(litige);
+    @Autowired
+    private JwtUtils jwtUtils;
+
+    //  Créer un litige - JSON (missionId dans le corps)
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<LitigeDTO> creerLitige(@RequestBody CreationLitigeDTO dto, HttpServletRequest request) {
+        Long userId = jwtUtils.getUserIdFromToken(request);
+        if (userId == null) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        if (dto.getMissionId() == null) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        // Les IDs jeune/recruteur seront déduits depuis la mission côté service
+        try {
+            LitigeDTO litige = litigeService.creerLitige(dto);
+            return ResponseEntity.ok(litige);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    //  Créer un litige - Multipart (document facultatif)
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<LitigeDTO> creerLitigeMultipart(
+            @RequestParam("type") String type,
+            @RequestParam("description") String description,
+            @RequestParam("missionId") Long missionId,
+            @RequestParam(value = "document", required = false) MultipartFile document,
+            HttpServletRequest request) {
+        Long userId = jwtUtils.getUserIdFromToken(request);
+        if (userId == null) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        if (missionId == null) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        CreationLitigeDTO dto = new CreationLitigeDTO();
+        dto.setType(type);
+        dto.setDescription(description);
+        dto.setMissionId(missionId);
+        // Les IDs jeune/recruteur seront déduits depuis la mission côté service
+
+        try {
+            LitigeDTO litige = litigeService.creerLitige(dto, document);
+            return ResponseEntity.ok(litige);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
     }
 
     // - Tous les litiges
@@ -48,8 +95,13 @@ public class LitigeController {
     @PutMapping("/{id}/assigner")
     public ResponseEntity<LitigeDTO> assignerLitige(
             @PathVariable Long id,
-            @RequestBody AssignationLitigeDTO dto) {
-        LitigeDTO litige = litigeService.assignerLitige(id, dto.getAdministrateurId());
+            @RequestBody(required = false) AssignationLitigeDTO dto,
+            HttpServletRequest request) {
+        Long adminId = jwtUtils.getUserIdFromToken(request);
+        if (adminId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        LitigeDTO litige = litigeService.assignerLitige(id, adminId);
         return ResponseEntity.ok(litige);
     }
 
@@ -57,21 +109,34 @@ public class LitigeController {
     @PutMapping("/{id}/resoudre")
     public ResponseEntity<LitigeDTO> resoudreLitige(
             @PathVariable Long id,
-            @RequestBody ResolutionLitigeDTO dto) {
+            @RequestBody ResolutionLitigeDTO dto,
+            HttpServletRequest request) {
+        Long adminId = jwtUtils.getUserIdFromToken(request);
+        if (adminId != null) {
+            dto.setAdministrateurId(adminId);
+        }
         LitigeDTO litige = litigeService.resoudreLitige(id, dto);
         return ResponseEntity.ok(litige);
     }
 
     //  Litiges d'un jeune prestataire
-    @GetMapping("/jeune/{jeuneId}")
-    public ResponseEntity<List<LitigeDTO>> getLitigesParJeune(@PathVariable Long jeuneId) {
+    @GetMapping("/jeune")
+    public ResponseEntity<List<LitigeDTO>> getLitigesParJeune(HttpServletRequest request) {
+        Long jeuneId = jwtUtils.getUserIdFromToken(request);
+        if (jeuneId == null) {
+            return ResponseEntity.badRequest().build();
+        }
         List<LitigeDTO> litiges = litigeService.getLitigesParJeunePrestateur(jeuneId);
         return ResponseEntity.ok(litiges);
     }
 
     // Litiges d'un recruteur
-    @GetMapping("/recruteur/{recruteurId}")
-    public ResponseEntity<List<LitigeDTO>> getLitigesParRecruteur(@PathVariable Long recruteurId) {
+    @GetMapping("/recruteur")
+    public ResponseEntity<List<LitigeDTO>> getLitigesParRecruteur(HttpServletRequest request) {
+        Long recruteurId = jwtUtils.getUserIdFromToken(request);
+        if (recruteurId == null) {
+            return ResponseEntity.badRequest().build();
+        }
         List<LitigeDTO> litiges = litigeService.getLitigesParRecruteur(recruteurId);
         return ResponseEntity.ok(litiges);
     }
@@ -84,8 +149,12 @@ public class LitigeController {
     }
 
     //  Litiges d'un administrateur
-    @GetMapping("/administrateur/{adminId}")
-    public ResponseEntity<List<LitigeDTO>> getLitigesParAdministrateur(@PathVariable Long adminId) {
+    @GetMapping("/administrateur")
+    public ResponseEntity<List<LitigeDTO>> getLitigesParAdministrateur(HttpServletRequest request) {
+        Long adminId = jwtUtils.getUserIdFromToken(request);
+        if (adminId == null) {
+            return ResponseEntity.badRequest().build();
+        }
         List<LitigeDTO> litiges = litigeService.getLitigesParAdministrateur(adminId);
         return ResponseEntity.ok(litiges);
     }

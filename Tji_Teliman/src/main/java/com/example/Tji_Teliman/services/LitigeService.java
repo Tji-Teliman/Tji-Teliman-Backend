@@ -6,10 +6,12 @@ import com.example.Tji_Teliman.dto.*;
 import com.example.Tji_Teliman.entites.*;
 import com.example.Tji_Teliman.entites.enums.StatutLitige;
 import com.example.Tji_Teliman.entites.enums.TypeLitige;
+import com.example.Tji_Teliman.entites.enums.StatutCandidature;
 import com.example.Tji_Teliman.mapper.LitigeMapper;
 import com.example.Tji_Teliman.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,17 +38,30 @@ public class LitigeService {
     @Autowired
     private LitigeMapper litigeMapper;
 
+    @Autowired
+    private CandidatureRepository candidatureRepository;
+
+    @Autowired
+    private FileStorageService storageService;
+
     //  CRÉER UN LITIGE
     public LitigeDTO creerLitige(CreationLitigeDTO dto) {
-        JeunePrestateur jeune = jeunePrestateurRepository.findById(dto.getJeunePrestateurId())
-                .orElseThrow(() -> new RuntimeException("Jeune prestataire non trouvé"));
-        Recruteur recruteur = recruteurRepository.findById(dto.getRecruteurId())
-                .orElseThrow(() -> new RuntimeException("Recruteur non trouvé"));
         Mission mission = missionRepository.findById(dto.getMissionId())
                 .orElseThrow(() -> new RuntimeException("Mission non trouvée"));
+        Recruteur recruteur = mission.getRecruteur();
+        if (recruteur == null) {
+            throw new RuntimeException("Recruteur non associé à la mission");
+        }
+        // Déterminer le jeune depuis la candidature acceptée de la mission
+        JeunePrestateur jeune = candidatureRepository.findByMission(mission).stream()
+                .filter(c -> c.getStatut() == StatutCandidature.ACCEPTEE)
+                .map(Candidature::getJeunePrestateur)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Aucun jeune associé (candidature acceptée introuvable) pour cette mission"));
 
         Litige litige = new Litige();
-        litige.setTitre(dto.getTitre());
+        // Titre non requis côté frontend, on met un libellé par défaut
+        litige.setTitre("Litige - " + mission.getTitre());
         litige.setDescription(dto.getDescription());
         litige.setType(TypeLitige.valueOf(dto.getType()));
         litige.setStatut(StatutLitige.OUVERT);
@@ -54,6 +69,42 @@ public class LitigeService {
         litige.setRecruteur(recruteur);
         litige.setMission(mission);
         litige.setDateCreation(LocalDateTime.now());
+
+        Litige savedLitige = litigeRepository.save(litige);
+        return litigeMapper.toDto(savedLitige);
+    }
+
+    //  CRÉER UN LITIGE avec document facultatif (stocké et URL sauvegardée)
+    public LitigeDTO creerLitige(CreationLitigeDTO dto, MultipartFile document) {
+        Mission mission = missionRepository.findById(dto.getMissionId())
+                .orElseThrow(() -> new RuntimeException("Mission non trouvée"));
+        Recruteur recruteur = mission.getRecruteur();
+        if (recruteur == null) {
+            throw new RuntimeException("Recruteur non associé à la mission");
+        }
+        JeunePrestateur jeune = candidatureRepository.findByMission(mission).stream()
+                .filter(c -> c.getStatut() == StatutCandidature.ACCEPTEE)
+                .map(Candidature::getJeunePrestateur)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Aucun jeune associé (candidature acceptée introuvable) pour cette mission"));
+
+        Litige litige = new Litige();
+        litige.setTitre("Litige - " + mission.getTitre());
+        litige.setDescription(dto.getDescription());
+        litige.setType(TypeLitige.valueOf(dto.getType()));
+        litige.setStatut(StatutLitige.OUVERT);
+        litige.setJeunePrestateur(jeune);
+        litige.setRecruteur(recruteur);
+        litige.setMission(mission);
+        litige.setDateCreation(LocalDateTime.now());
+        if (document != null && !document.isEmpty()) {
+            try {
+                String path = storageService.store(document, "litiges");
+                litige.setDocumentUrl(path);
+            } catch (java.io.IOException ex) {
+                throw new RuntimeException("Echec de stockage du document du litige", ex);
+            }
+        }
 
         Litige savedLitige = litigeRepository.save(litige);
         return litigeMapper.toDto(savedLitige);
