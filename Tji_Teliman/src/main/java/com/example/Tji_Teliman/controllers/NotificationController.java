@@ -135,6 +135,8 @@ public class NotificationController {
                     // Montant, nom de la mission et par qui
                     if (n.getPaiement() != null) {
                         dto.setMontantPaiement(n.getPaiement().getMontant());
+                        dto.setMontantFrais(n.getPaiement().getFrais());
+                        dto.setMontantTotalPaiement(n.getPaiement().getMontantTotal());
                         if (n.getPaiement().getRecruteur() != null) {
                             dto.setPaiementParNom(n.getPaiement().getRecruteur().getNom());
                             dto.setPaiementParPrenom(n.getPaiement().getRecruteur().getPrenom());

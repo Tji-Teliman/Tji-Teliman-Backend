@@ -42,11 +42,18 @@ public class PaiementService {
             throw new IllegalArgumentException("Le paiement ne peut être effectué que pour une mission terminée");
         }
 
-        // Vérifier que le montant correspond à la rémunération de la mission
-        if (candidature.getMission().getRemuneration() != null && 
-            !candidature.getMission().getRemuneration().equals(montant)) {
-            throw new IllegalArgumentException("Le montant doit correspondre à la rémunération de la mission (" + 
-                candidature.getMission().getRemuneration() + ")");
+        Double remuneration = candidature.getMission() != null ? candidature.getMission().getRemuneration() : null;
+        if (remuneration == null) {
+            throw new IllegalArgumentException("La mission ne possède pas de rémunération définie");
+        }
+
+        double frais = calculateFrais(remuneration);
+        double montantTotalAttendu = remuneration + frais;
+
+        if (montant != null && Math.abs(montant - montantTotalAttendu) > 0.01) {
+            throw new IllegalArgumentException(
+                "Le montant à payer doit être égal à la rémunération (" + remuneration + ") + 2% de frais (" + frais + "), soit " + montantTotalAttendu
+            );
         }
 
         Paiement paiement = candidature.getPaiement();
@@ -56,7 +63,9 @@ public class PaiementService {
             throw new IllegalArgumentException("Un paiement a déjà été effectué pour cette candidature");
         }
 
-        paiement.setMontant(montant);
+        paiement.setMontant(remuneration);
+        paiement.setFrais(frais);
+        paiement.setMontantTotal(montantTotalAttendu);
         paiement.setTelephone(telephone);
         paiement.setDatePaiement(new Date());
         paiement.setStatutPaiement(StatutPaiement.REUSSIE);
@@ -118,6 +127,8 @@ public class PaiementService {
         PaiementDTO dto = new PaiementDTO();
         dto.setId(p.getId());
         dto.setMontant(p.getMontant());
+        dto.setFrais(p.getFrais());
+        dto.setMontantTotal(p.getMontantTotal());
         dto.setTelephone(p.getTelephone());
         dto.setDatePaiement(p.getDatePaiement());
         dto.setStatutPaiement(p.getStatutPaiement() == null ? null : p.getStatutPaiement().name());
@@ -170,7 +181,15 @@ public class PaiementService {
         }
 
         Paiement paiement = new Paiement();
-        paiement.setMontant(candidature.getMission() != null ? candidature.getMission().getRemuneration() : null);
+        Double remuneration = candidature.getMission() != null ? candidature.getMission().getRemuneration() : null;
+        if (remuneration == null) {
+            throw new IllegalArgumentException("La mission ne possède pas de rémunération définie");
+        }
+
+        double frais = calculateFrais(remuneration);
+        paiement.setMontant(remuneration);
+        paiement.setFrais(frais);
+        paiement.setMontantTotal(remuneration + frais);
         paiement.setTelephone(null);
         paiement.setDatePaiement(null);
         paiement.setStatutPaiement(StatutPaiement.EN_ATTENTE);
@@ -181,5 +200,9 @@ public class PaiementService {
         candidature.setPaiement(saved);
         candidatureRepository.save(candidature);
         return saved;
+    }
+
+    private double calculateFrais(Double remuneration) {
+        return remuneration == null ? 0d : remuneration * 0.02;
     }
 }

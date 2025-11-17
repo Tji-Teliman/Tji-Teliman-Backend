@@ -29,6 +29,8 @@ public class NotificationDTO {
     
     // Pour PAIEMENT_EFFECTUE
     private Double montantPaiement;
+    private Double montantFrais;
+    private Double montantTotalPaiement;
     private String paiementParNom;
     private String paiementParPrenom;
     
@@ -92,6 +94,12 @@ public class NotificationDTO {
     
     public Double getMontantPaiement() { return montantPaiement; }
     public void setMontantPaiement(Double montantPaiement) { this.montantPaiement = montantPaiement; }
+
+    public Double getMontantFrais() { return montantFrais; }
+    public void setMontantFrais(Double montantFrais) { this.montantFrais = montantFrais; }
+
+    public Double getMontantTotalPaiement() { return montantTotalPaiement; }
+    public void setMontantTotalPaiement(Double montantTotalPaiement) { this.montantTotalPaiement = montantTotalPaiement; }
     
     public String getPaiementParNom() { return paiementParNom; }
     public void setPaiementParNom(String paiementParNom) { this.paiementParNom = paiementParNom; }

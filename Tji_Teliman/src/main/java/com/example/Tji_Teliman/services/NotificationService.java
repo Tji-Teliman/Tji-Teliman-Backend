@@ -55,7 +55,7 @@ public class NotificationService {
     @Transactional
     public Notification notifyPaiementEffectue(Utilisateur destinataire, Paiement paiement) {
         String titre = "Paiement effectué";
-        String contenu = "Le paiement de " + paiement.getMontant() + " a été effectué.";
+        String contenu = "Le paiement total de " + paiement.getMontantTotal() + " (dont " + paiement.getMontant() + " de rémunération et " + paiement.getFrais() + " de frais) a été effectué.";
         return notify(destinataire, titre, contenu, TypeNotification.PAIEMENT_EFFECTUE, paiement.getCandidature().getMission(), paiement.getCandidature(), paiement);
     }
 

@@ -22,6 +22,8 @@ public class PaiementDTO {
     private String missionStatut;
     private Date missionDateDebut;
     private Date missionDateFin;
+    private Double frais;
+    private Double montantTotal;
 
     // Constructeurs
     public PaiementDTO() {}
@@ -83,4 +85,10 @@ public class PaiementDTO {
 
     public Date getMissionDateFin() { return missionDateFin; }
     public void setMissionDateFin(Date missionDateFin) { this.missionDateFin = missionDateFin; }
+
+    public Double getFrais() { return frais; }
+    public void setFrais(Double frais) { this.frais = frais; }
+
+    public Double getMontantTotal() { return montantTotal; }
+    public void setMontantTotal(Double montantTotal) { this.montantTotal = montantTotal; }
 }

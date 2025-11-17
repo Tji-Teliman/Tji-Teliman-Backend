@@ -35,6 +35,12 @@ public class Paiement {
     @Column(nullable = false)
     private Double montant;
 
+    @Column(nullable = false)
+    private Double frais;
+
+    @Column(nullable = false)
+    private Double montantTotal;
+
     @Column(nullable = true)
     private String telephone;
 
