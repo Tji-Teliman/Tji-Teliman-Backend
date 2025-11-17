@@ -3,6 +3,7 @@ package com.example.Tji_Teliman.controllers;
 import com.example.Tji_Teliman.services.AdministrateurService;
 import com.example.Tji_Teliman.entites.enums.StatutUtilisateur;
 import com.example.Tji_Teliman.config.JwtUtils;
+import com.example.Tji_Teliman.services.MissionService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,10 +15,12 @@ public class AdministrateurController {
 
     private final AdministrateurService administrateurService;
     private final JwtUtils jwtUtils;
+    private final MissionService missionService;
 
-    public AdministrateurController(AdministrateurService administrateurService, JwtUtils jwtUtils) {
+    public AdministrateurController(AdministrateurService administrateurService, JwtUtils jwtUtils, MissionService missionService) {
         this.administrateurService = administrateurService;
         this.jwtUtils = jwtUtils;
+        this.missionService = missionService;
     }
 
     // Lister les utilisateurs avec statistiques (admin connecté)
@@ -61,6 +64,16 @@ public class AdministrateurController {
         }
         var payload = administrateurService.listMissionsWithStats();
         return ResponseEntity.ok(payload);
+    }
+
+    // Obtenir une mission par son ID
+    @GetMapping("/missions/{id}")
+    public ResponseEntity<?> getById(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(new MissionController.ApiResponse(true, "Mission", missionService.getById(id)));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(new MissionController.ApiResponse(false, ex.getMessage(), null));
+        }
     }
 
     // Lister les paiements avec statistiques (admin connecté)

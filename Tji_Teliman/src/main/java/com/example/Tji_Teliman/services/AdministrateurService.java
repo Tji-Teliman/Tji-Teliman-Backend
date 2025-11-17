@@ -1,27 +1,26 @@
 package com.example.Tji_Teliman.services;
 
-import com.example.Tji_Teliman.dto.AdminUserDTO;
-import com.example.Tji_Teliman.dto.AdminUsersWithStatsResponse;
+import com.example.Tji_Teliman.dto.*;
 import com.example.Tji_Teliman.entites.Utilisateur;
+import com.example.Tji_Teliman.entites.enums.StatutUtilisateur;
 import com.example.Tji_Teliman.repository.JeunePrestateurRepository;
 import com.example.Tji_Teliman.repository.RecruteurRepository;
 import com.example.Tji_Teliman.repository.UtilisateurRepository;
 import com.example.Tji_Teliman.repository.MissionRepository;
-import com.example.Tji_Teliman.dto.SystemStatsDTO;
 import com.example.Tji_Teliman.entites.enums.StatutMission;
-import com.example.Tji_Teliman.dto.AdminMissionsWithStatsResponse;
-import com.example.Tji_Teliman.dto.MissionDTO;
 import com.example.Tji_Teliman.entites.Mission;
-import com.example.Tji_Teliman.dto.AdminPaiementsWithStatsResponse;
-import com.example.Tji_Teliman.dto.PaiementDTO;
 import com.example.Tji_Teliman.entites.Paiement;
 import com.example.Tji_Teliman.entites.enums.StatutPaiement;
 import com.example.Tji_Teliman.repository.PaiementRepository;
 import java.util.List;
 import java.util.Date;
 import java.util.stream.Collectors;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @Service
 public class AdministrateurService {
@@ -32,6 +31,8 @@ public class AdministrateurService {
     private final MissionRepository missionRepository;
     private final PaiementRepository paiementRepository;
 
+    private final CandidatureService candidatureService;
+
     
 
     @Transactional(readOnly = true)
@@ -40,7 +41,7 @@ public class AdministrateurService {
         // Exclure l'administrateur courant de la liste et des totaux utilisateurs
         List<Utilisateur> filtered = all.stream()
             .filter(u -> !u.getId().equals(adminId))
-            .collect(Collectors.toList());
+            .toList();
 
         long totalJeunes = jeuneRepo.count();
         long totalRecruteurs = recruteurRepo.count();
@@ -97,7 +98,7 @@ public class AdministrateurService {
                                  JeunePrestateurRepository jeuneRepo,
                                  RecruteurRepository recruteurRepo,
                                  MissionRepository missionRepository,
-                                 PaiementRepository paiementRepository,
+                                 PaiementRepository paiementRepository, CandidatureService candidatureService,
                                  MissionService missionService,
                                  PaiementService paiementService) {
         this.utilisateurRepository = utilisateurRepository;
@@ -105,6 +106,7 @@ public class AdministrateurService {
         this.recruteurRepo = recruteurRepo;
         this.missionRepository = missionRepository;
         this.paiementRepository = paiementRepository;
+        this.candidatureService = candidatureService;
         this.missionService = missionService;
         this.paiementService = paiementService;
     }
@@ -138,10 +140,10 @@ public class AdministrateurService {
 
     private final PaiementService paiementService;
     @Transactional
-    public Utilisateur setUserStatut(Long userId, com.example.Tji_Teliman.entites.enums.StatutUtilisateur statut) {
+    public void setUserStatut(Long userId, StatutUtilisateur statut) {
         var user = utilisateurRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
         user.setStatut(statut);
-        return utilisateurRepository.save(user);
+        utilisateurRepository.save(user);
     }
 
     private PaiementDTO toPaiementDTO(Paiement p) { return paiementService.toDTO(p); }
@@ -158,5 +160,13 @@ public class AdministrateurService {
             u.getStatut() != null ? u.getStatut().name() : null,
             u.getDateCreation()
         );
+    }
+
+
+
+    // Lister les candidatures d'une mission donnée
+    @GetMapping("/candidatures/mission/{missionId}")
+    public ResponseEntity<List<CandidatureDTO>> getCandidaturesByMission(@PathVariable Long missionId) {
+        return ResponseEntity.ok(candidatureService.getCandidaturesByMission(missionId));
     }
 }

@@ -1,61 +1,67 @@
 package com.example.Tji_Teliman.config;
 
-import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Service;
-
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.security.Keys;
+import java.security.Key;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Function;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
-@Service
+@Component
 public class JwtService {
 
-    private static final String SECRET_KEY = "ton_secret_jwt_super_long_et_unique";
+    private final Key key;
+    private final long expirationMs;
 
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
+    public JwtService(
+            @Value("${app.jwt.secret:changeme-secret-key-please}") String secret,
+            @Value("${app.jwt.expiration-ms:86400000}") long expirationMs
+    ) {
+        // For simplicity, derive a key from secret; in prod use a proper Base64 key
+        this.key = Keys.hmacShaKeyFor(secret.getBytes());
+        this.expirationMs = expirationMs;
     }
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
-    }
-
-    public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
-    }
-
-    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+    public String generateToken(Long userId, String telephone, String role) {
+        Date now = new Date();
+        Date exp = new Date(now.getTime() + expirationMs);
         return Jwts.builder()
-                .setClaims(extraClaims)
-                .setSubject(userDetails.getUsername())
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 24h
-                .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
+                .setSubject(String.valueOf(userId))
+                .claim("tel", telephone)
+                .claim("role", role)
+                .setIssuedAt(now)
+                .setExpiration(exp)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+    public Long parseUserId(String token) {
+        try {
+            var claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            String sub = claims.getSubject();
+            return sub == null ? null : Long.valueOf(sub);
+        } catch (JwtException | IllegalArgumentException ex) {
+            return null;
+        }
     }
 
-    private boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
-    }
-
-    private Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
-    }
-
-    private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .setSigningKey(SECRET_KEY)
-                .parseClaimsJws(token)
-                .getBody();
+    public String parseUserRole(String token) {
+        try {
+            var claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return claims.get("role", String.class);
+        } catch (JwtException | IllegalArgumentException ex) {
+            return null;
+        }
     }
 }
+

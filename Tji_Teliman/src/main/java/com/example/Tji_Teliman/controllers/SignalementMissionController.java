@@ -32,9 +32,9 @@ public class SignalementMissionController {
     // Signaler une mission (jeune connecté) en précisant un type et une description
     @PostMapping(value = "/missions/{missionId}")
     public ResponseEntity<?> signalerMission(
-        @PathVariable Long missionId,
-        HttpServletRequest httpRequest,
-        @org.springframework.web.bind.annotation.RequestBody SignalerRequest request
+            @PathVariable Long missionId,
+            HttpServletRequest httpRequest,
+            @org.springframework.web.bind.annotation.RequestBody SignalerRequest request
     ) {
         try {
             Long jeuneId = jwtUtils.getUserIdFromToken(httpRequest);
@@ -62,5 +62,4 @@ public class SignalementMissionController {
 
     // Suppression de l'endpoint de mise à jour de statut (non géré pour l'instant)
 }
-
 
