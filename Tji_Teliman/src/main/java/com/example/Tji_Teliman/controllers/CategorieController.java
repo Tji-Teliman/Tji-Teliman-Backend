@@ -28,13 +28,13 @@ public class CategorieController {
 
     // Créer une catégorie (admin) avec nom et photo
     @PostMapping(consumes = {"multipart/form-data"})
-    public ResponseEntity<?> create(@RequestParam String nom, @RequestParam MultipartFile photo, HttpServletRequest httpRequest) {
+    public ResponseEntity<?> create(@RequestParam String nom, @RequestParam(required = false) String description, @RequestParam MultipartFile photo, HttpServletRequest httpRequest) {
         try {
             Long adminId = jwtUtils.getUserIdFromToken(httpRequest);
             if (adminId == null) {
                 return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
             }
-            Categorie c = categorieService.create(adminId, nom, photo);
+            Categorie c = categorieService.create(adminId, nom, description, photo);
             CategorieDTO dto = categorieService.toDTO(c);
             return ResponseEntity.ok(new ApiResponse(true, "Catégorie créée", dto));
         } catch (IllegalArgumentException ex) {
@@ -53,13 +53,13 @@ public class CategorieController {
 
     // Mettre à jour une catégorie (admin), nom et/ou photo
     @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestParam(required=false) String nom, @RequestParam(required=false) MultipartFile photo, HttpServletRequest httpRequest) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestParam(required=false) String nom, @RequestParam(required=false) String description, @RequestParam(required=false) MultipartFile photo, HttpServletRequest httpRequest) {
         try {
             Long adminId = jwtUtils.getUserIdFromToken(httpRequest);
             if (adminId == null) {
                 return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
             }
-            Categorie c = categorieService.update(id, nom, photo);
+            Categorie c = categorieService.update(id, nom, description, photo);
             CategorieDTO dto = categorieService.toDTO(c);
             return ResponseEntity.ok(new ApiResponse(true, "Catégorie mise à jour", dto));
         } catch (IllegalArgumentException ex) {

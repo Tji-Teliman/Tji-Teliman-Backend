@@ -29,6 +29,9 @@ public class Categorie {
     @Column(nullable = false, unique = true)
     private String nom;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @Column(nullable = false)
     private String urlPhoto;
 

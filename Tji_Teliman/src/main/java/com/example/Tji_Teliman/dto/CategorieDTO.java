@@ -3,6 +3,7 @@ package com.example.Tji_Teliman.dto;
 public class CategorieDTO {
     private Long id;
     private String nom;
+    private String description;
     private String urlPhoto;
     private Integer missionsCount;
 
@@ -10,6 +11,8 @@ public class CategorieDTO {
     public void setId(Long id) { this.id = id; }
     public String getNom() { return nom; }
     public void setNom(String nom) { this.nom = nom; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
     public String getUrlPhoto() { return urlPhoto; }
     public void setUrlPhoto(String urlPhoto) { this.urlPhoto = urlPhoto; }
     public Integer getMissionsCount() { return missionsCount; }

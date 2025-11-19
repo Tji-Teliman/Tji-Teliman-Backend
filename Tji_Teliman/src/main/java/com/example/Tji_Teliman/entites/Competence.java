@@ -30,6 +30,9 @@ public class Competence {
     @Column(nullable = false, unique = true)
     private String nom;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "administrateur_id", nullable = false)
     private Administrateur administrateur;

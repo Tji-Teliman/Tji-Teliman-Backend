@@ -27,7 +27,7 @@ public class CompetenceController {
         this.jwtUtils = jwtUtils;
     }
 
-    public record CreateCompetenceRequest(String nom) {}
+    public record CreateCompetenceRequest(String nom, String description) {}
     public record ApiResponse(boolean success, String message, Object data) {}
 
     // Créer une compétence (admin)
@@ -38,7 +38,7 @@ public class CompetenceController {
             if (adminId == null) {
                 return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
             }
-            Competence c = competenceService.create(req.nom(), adminId);
+            Competence c = competenceService.create(req.nom(), req.description(), adminId);
             return ResponseEntity.ok(new ApiResponse(true, "Compétence créée", c));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
@@ -59,7 +59,7 @@ public class CompetenceController {
             if (adminId == null) {
                 return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
             }
-            Competence c = competenceService.update(id, req.nom());
+            Competence c = competenceService.update(id, req.nom(), req.description());
             return ResponseEntity.ok(new ApiResponse(true, "Compétence mise à jour", c));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));

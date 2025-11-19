@@ -7,9 +7,13 @@ import com.example.Tji_Teliman.entites.Notation;
 import com.example.Tji_Teliman.entites.Recruteur;
 import com.example.Tji_Teliman.entites.Utilisateur;
 import com.example.Tji_Teliman.entites.enums.TypeNotification;
+import com.example.Tji_Teliman.repository.AdministrateurRepository;
+import com.example.Tji_Teliman.repository.JeunePrestateurRepository;
 import com.example.Tji_Teliman.repository.NotificationRepository;
 import com.example.Tji_Teliman.repository.NotationRepository;
+import com.example.Tji_Teliman.repository.RecruteurRepository;
 import com.example.Tji_Teliman.repository.UtilisateurRepository;
+import com.example.Tji_Teliman.services.NotificationService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Date;
@@ -20,7 +24,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,16 +38,86 @@ public class NotificationController {
     private final NotificationRepository notificationRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final NotationRepository notationRepository;
+    private final NotificationService notificationService;
+    private final JeunePrestateurRepository jeunePrestateurRepository;
+    private final RecruteurRepository recruteurRepository;
+    private final AdministrateurRepository administrateurRepository;
     private final JwtUtils jwtUtils;
 
-    public NotificationController(NotificationRepository notificationRepository, UtilisateurRepository utilisateurRepository, NotationRepository notationRepository, JwtUtils jwtUtils) {
+    public NotificationController(NotificationRepository notificationRepository,
+                                  UtilisateurRepository utilisateurRepository,
+                                  NotationRepository notationRepository,
+                                  NotificationService notificationService,
+                                  JeunePrestateurRepository jeunePrestateurRepository,
+                                  RecruteurRepository recruteurRepository,
+                                  AdministrateurRepository administrateurRepository,
+                                  JwtUtils jwtUtils) {
         this.notificationRepository = notificationRepository;
         this.utilisateurRepository = utilisateurRepository;
         this.notationRepository = notationRepository;
+        this.notificationService = notificationService;
+        this.jeunePrestateurRepository = jeunePrestateurRepository;
+        this.recruteurRepository = recruteurRepository;
+        this.administrateurRepository = administrateurRepository;
         this.jwtUtils = jwtUtils;
     }
 
     public record ApiResponse(boolean success, String message, Object data) {}
+    public record BroadcastRequest(String cible, String titre, String message) {}
+    public enum BroadcastAudience {
+        JEUNES, RECRUTEURS, TOUS;
+
+        public static BroadcastAudience from(String raw) {
+            if (raw == null) throw new IllegalArgumentException("Cible requise (JEUNES, RECRUTEURS ou TOUS)");
+            try {
+                return BroadcastAudience.valueOf(raw.trim().toUpperCase());
+            } catch (IllegalArgumentException ex) {
+                throw new IllegalArgumentException("Cible invalide : " + raw + ". Valeurs acceptées : JEUNES, RECRUTEURS ou TOUS");
+            }
+        }
+    }
+
+    // Envoyer une notification globale (admin -> jeunes/recruteurs)
+    @PostMapping("/admin/broadcast")
+    public ResponseEntity<?> broadcast(@RequestBody BroadcastRequest request, HttpServletRequest httpRequest) {
+        try {
+            Long adminId = jwtUtils.getUserIdFromToken(httpRequest);
+            if (adminId == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
+            }
+            if (!administrateurRepository.existsById(adminId)) {
+                return ResponseEntity.status(403).body(new ApiResponse(false, "Accès réservé aux administrateurs", null));
+            }
+
+            if (request.titre() == null || request.titre().trim().isEmpty()) {
+                throw new IllegalArgumentException("Titre de la notification requis");
+            }
+            if (request.message() == null || request.message().trim().isEmpty()) {
+                throw new IllegalArgumentException("Message de la notification requis");
+            }
+
+            BroadcastAudience audience = BroadcastAudience.from(request.cible());
+            List<Utilisateur> destinataires = new ArrayList<>();
+            switch (audience) {
+                case JEUNES -> destinataires.addAll(jeunePrestateurRepository.findAll());
+                case RECRUTEURS -> destinataires.addAll(recruteurRepository.findAll());
+                case TOUS -> {
+                    destinataires.addAll(jeunePrestateurRepository.findAll());
+                    destinataires.addAll(recruteurRepository.findAll());
+                }
+            }
+
+            if (destinataires.isEmpty()) {
+                return ResponseEntity.ok(new ApiResponse(true, "Aucun destinataire pour cette notification", List.of()));
+            }
+
+            var notifications = notificationService.notifyAdminBroadcast(destinataires, request.titre().trim(), request.message().trim());
+            var data = notifications.stream().map(this::toDTO).toList();
+            return ResponseEntity.ok(new ApiResponse(true, "Notification envoyée à " + notifications.size() + " destinataire(s)", data));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
+        }
+    }
 
     // Lister les notifications de l'utilisateur connecté
     // Par défaut, ne marque PAS les notifications comme lues
@@ -242,6 +318,9 @@ public class NotificationController {
                             dto.setMissionTitre(n.getCandidature().getMission().getTitre());
                         }
                     }
+                    break;
+                case COMMUNICATION_ADMIN:
+                    // Pas de contexte additionnel
                     break;
             }
         }

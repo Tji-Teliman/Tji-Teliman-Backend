@@ -20,7 +20,7 @@ public class CompetenceService {
     }
 
     @Transactional
-    public Competence create(String nom, Long administrateurId) {
+    public Competence create(String nom, String description, Long administrateurId) {
         if (nom == null || nom.trim().isEmpty()) {
             throw new IllegalArgumentException("Nom de la compétence requis");
         }
@@ -31,6 +31,7 @@ public class CompetenceService {
             .orElseThrow(() -> new IllegalArgumentException("Administrateur introuvable"));
         Competence c = new Competence();
         c.setNom(nom.trim());
+        c.setDescription(description == null || description.trim().isEmpty() ? null : description.trim());
         c.setAdministrateur(admin);
         return competenceRepository.save(c);
     }
@@ -41,10 +42,11 @@ public class CompetenceService {
     }
 
     @Transactional
-    public Competence update(Long id, String nom) {
+    public Competence update(Long id, String nom, String description) {
         Competence c = competenceRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Compétence introuvable"));
         if (nom != null && !nom.trim().isEmpty()) c.setNom(nom.trim());
+        if (description != null) c.setDescription(description.trim().isEmpty() ? null : description.trim());
         return competenceRepository.save(c);
     }
 
