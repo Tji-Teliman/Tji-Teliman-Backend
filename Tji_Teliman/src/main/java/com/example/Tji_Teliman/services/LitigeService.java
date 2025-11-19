@@ -118,6 +118,14 @@ public class LitigeService {
                 .collect(Collectors.toList());
     }
 
+    // LES LITIGES par id
+    public List<LitigeDTO> getLitigeById(Long id) {
+        return litigeRepository.findById(id)
+                .stream()
+                .map(litigeMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
     //  LISTER LES LITIGES PAR STATUT
     public List<LitigeDTO> getLitigesParStatut(String statut) {
         return litigeRepository.findByStatut(StatutLitige.valueOf(statut))

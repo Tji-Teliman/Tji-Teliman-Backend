@@ -10,8 +10,12 @@ public class LitigeDTO {
     private String statut;
     private Long jeunePrestateurId;
     private String jeunePrestateurNom;
+    private String jeunePrestateurEmail;
+
     private Long recruteurId;
     private String recruteurNom;
+    private String recruteurEmail;
+
     private Long missionId;
     private String missionTitre;
     private Long administrateurId;
@@ -20,6 +24,7 @@ public class LitigeDTO {
     private LocalDateTime dateCreation;
     private LocalDateTime dateResolution;
     private String documentUrl;
+
 
     // Constructeurs
     public LitigeDTO() {}
@@ -75,4 +80,20 @@ public class LitigeDTO {
 
     public String getDocumentUrl() { return documentUrl; }
     public void setDocumentUrl(String documentUrl) { this.documentUrl = documentUrl; }
+
+    public String getJeunePrestateurEmail() {
+        return jeunePrestateurEmail;
+    }
+
+    public void setJeunePrestateurEmail(String jeunePrestateurEmail) {
+        this.jeunePrestateurEmail = jeunePrestateurEmail;
+    }
+
+    public String getRecruteurEmail() {
+        return recruteurEmail;
+    }
+
+    public void setRecruteurEmail(String recruteurEmail) {
+        this.recruteurEmail = recruteurEmail;
+    }
 }

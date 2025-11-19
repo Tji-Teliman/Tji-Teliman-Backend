@@ -36,6 +36,9 @@ public class LitigeMapper {
                     litige.getJeunePrestateur().getPrenom() + " " +
                             litige.getJeunePrestateur().getNom()
             );
+            dto.setJeunePrestateurEmail(
+                    litige.getJeunePrestateur().getEmail()
+            );
         }
 
         // Mapping Recruteur
@@ -44,6 +47,9 @@ public class LitigeMapper {
             dto.setRecruteurNom(
                     litige.getRecruteur().getPrenom() + " " +
                             litige.getRecruteur().getNom()
+            );
+            dto.setRecruteurEmail(
+                    litige.getRecruteur().getEmail()
             );
         }
 

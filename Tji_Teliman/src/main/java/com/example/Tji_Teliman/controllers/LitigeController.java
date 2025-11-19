@@ -77,6 +77,13 @@ public class LitigeController {
         return ResponseEntity.ok(litiges);
     }
 
+    // - Les litiges par id
+    @GetMapping("/{id}")
+    public ResponseEntity<List<LitigeDTO>> getLitigeById(@PathVariable long id) {
+        List<LitigeDTO> litiges = litigeService.getLitigeById(id);
+        return ResponseEntity.ok(litiges);
+    }
+
     //  Litiges par statut
     @GetMapping("/statut/{statut}")
     public ResponseEntity<List<LitigeDTO>> getLitigesParStatut(@PathVariable String statut) {
