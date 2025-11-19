@@ -11,6 +11,7 @@ import com.example.Tji_Teliman.repository.NotificationRepository;
 import com.example.Tji_Teliman.repository.NotationRepository;
 import com.example.Tji_Teliman.repository.UtilisateurRepository;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -41,9 +43,12 @@ public class NotificationController {
 
     public record ApiResponse(boolean success, String message, Object data) {}
 
-    // Lister les notifications de l'utilisateur connecté (et les marquer lues)
+    // Lister les notifications de l'utilisateur connecté
+    // Par défaut, ne marque PAS les notifications comme lues
+    // Pour marquer comme lues, utiliser le paramètre ?marquerCommeLues=true
     @GetMapping("/mes-notifications")
-    public ResponseEntity<?> listByUtilisateur(HttpServletRequest httpRequest) {
+    public ResponseEntity<?> listByUtilisateur(HttpServletRequest httpRequest,
+                                               @RequestParam(name = "marquerCommeLues", defaultValue = "false") boolean marquerCommeLues) {
         try {
             Long utilisateurId = jwtUtils.getUserIdFromToken(httpRequest);
             if (utilisateurId == null) {
@@ -52,11 +57,19 @@ public class NotificationController {
             Utilisateur u = utilisateurRepository.findById(utilisateurId).orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
             List<Notification> notifications = notificationRepository.findByDestinataireOrderByDateCreationDesc(u);
             
-            // Marquer toutes les notifications comme lues lors de la consultation
-            for (Notification n : notifications) {
-                if (!n.isEstLue()) {
-                    n.setEstLue(true);
-                    notificationRepository.save(n);
+            // Marquer les notifications comme lues UNIQUEMENT si le paramètre est explicitement à true
+            // Cela permet au frontend de récupérer les notifications sans les marquer comme lues
+            // et de les marquer comme lues uniquement quand l'utilisateur consulte réellement la page
+            if (marquerCommeLues) {
+                List<Notification> notificationsAMettreAJour = new ArrayList<>();
+                for (Notification n : notifications) {
+                    if (!n.isEstLue()) {
+                        n.setEstLue(true);
+                        notificationsAMettreAJour.add(n);
+                    }
+                }
+                if (!notificationsAMettreAJour.isEmpty()) {
+                    notificationRepository.saveAll(notificationsAMettreAJour);
                 }
             }
             
