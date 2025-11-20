@@ -39,6 +39,21 @@ public class NotificationService {
     }
 
     @Transactional
+    public java.util.List<Notification> notifyAdminBroadcast(java.util.Collection<? extends Utilisateur> destinataires, String titre, String contenu) {
+        if (destinataires == null || destinataires.isEmpty()) {
+            return java.util.List.of();
+        }
+        if (contenu == null || contenu.trim().isEmpty()) {
+            throw new IllegalArgumentException("Contenu de la notification requis");
+        }
+        java.util.List<Notification> notifications = new java.util.ArrayList<>(destinataires.size());
+        for (Utilisateur destinataire : destinataires) {
+            notifications.add(notify(destinataire, titre, contenu.trim(), TypeNotification.COMMUNICATION_ADMIN, null, null, null));
+        }
+        return notifications;
+    }
+
+    @Transactional
     public Notification notifyCandidatureAcceptee(Utilisateur jeune, Candidature candidature) {
         String titre = "Candidature acceptée";
         String contenu = "Votre candidature pour la mission '" + candidature.getMission().getTitre() + "' a été acceptée.";
@@ -55,7 +70,7 @@ public class NotificationService {
     @Transactional
     public Notification notifyPaiementEffectue(Utilisateur destinataire, Paiement paiement) {
         String titre = "Paiement effectué";
-        String contenu = "Le paiement de " + paiement.getMontant() + " a été effectué.";
+        String contenu = "Le paiement total de " + paiement.getMontantTotal() + " (dont " + paiement.getMontant() + " de rémunération et " + paiement.getFrais() + " de frais) a été effectué.";
         return notify(destinataire, titre, contenu, TypeNotification.PAIEMENT_EFFECTUE, paiement.getCandidature().getMission(), paiement.getCandidature(), paiement);
     }
 

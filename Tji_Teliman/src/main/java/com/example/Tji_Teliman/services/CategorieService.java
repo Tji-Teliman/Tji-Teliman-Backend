@@ -28,13 +28,14 @@ public class CategorieService {
     }
 
     @Transactional
-    public Categorie create(Long adminId, String nom, MultipartFile photo) throws IOException {
+    public Categorie create(Long adminId, String nom, String description, MultipartFile photo) throws IOException {
         if (nom == null || nom.trim().isEmpty()) throw new IllegalArgumentException("Nom requis");
         if (photo == null || photo.isEmpty()) throw new IllegalArgumentException("Photo requise");
         Administrateur admin = administrateurRepository.findById(adminId)
             .orElseThrow(() -> new IllegalArgumentException("Administrateur introuvable"));
         Categorie c = new Categorie();
         c.setNom(nom.trim());
+        c.setDescription(description == null || description.trim().isEmpty() ? null : description.trim());
         String path = storageService.store(photo, "categories");
         c.setUrlPhoto(path);
         c.setAdministrateur(admin);
@@ -51,16 +52,18 @@ public class CategorieService {
         CategorieDTO dto = new CategorieDTO();
         dto.setId(c.getId());
         dto.setNom(c.getNom());
+        dto.setDescription(c.getDescription());
         dto.setUrlPhoto(filePathConverter.toRelativePath(c.getUrlPhoto()));
         dto.setMissionsCount(c.getMissions() == null ? 0 : c.getMissions().size());
         return dto;
     }
 
     @Transactional
-    public Categorie update(Long id, String nom, MultipartFile photo) throws IOException {
+    public Categorie update(Long id, String nom, String description, MultipartFile photo) throws IOException {
         Categorie c = categorieRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Catégorie introuvable"));
         if (nom != null && !nom.trim().isEmpty()) c.setNom(nom.trim());
+        if (description != null) c.setDescription(description.trim().isEmpty() ? null : description.trim());
         if (photo != null && !photo.isEmpty()) {
             String path = storageService.store(photo, "categories");
             c.setUrlPhoto(path);
