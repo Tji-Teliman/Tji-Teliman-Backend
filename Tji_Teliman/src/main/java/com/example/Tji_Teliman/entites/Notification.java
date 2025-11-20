@@ -16,6 +16,8 @@ import jakarta.persistence.TemporalType;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Transient;
 import java.util.Date;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
@@ -55,14 +57,17 @@ public class Notification {
 
     @ManyToOne
     @JoinColumn(name = "mission_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Mission mission; // Contexte éventuel
 
     @ManyToOne
     @JoinColumn(name = "candidature_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Candidature candidature; // Contexte éventuel
 
     @ManyToOne
     @JoinColumn(name = "paiement_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Paiement paiement; // Contexte éventuel
 
     /**

@@ -15,6 +15,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.ManyToOne;
 import java.util.Date;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import lombok.Getter;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -53,6 +55,7 @@ public class Paiement {
 
     @OneToOne(optional = false)
     @JoinColumn(name = "candidature_id", nullable = false, unique = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Candidature candidature;
 
     @ManyToOne(optional = false)

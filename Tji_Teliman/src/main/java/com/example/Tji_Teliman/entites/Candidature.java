@@ -19,6 +19,8 @@ import jakarta.persistence.TemporalType;
 import jakarta.persistence.UniqueConstraint;
 import java.util.Date;
 import java.util.Set;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import lombok.Getter;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -54,6 +56,7 @@ public class Candidature {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "mission_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Mission mission;
 
     @ManyToOne(optional = false)
