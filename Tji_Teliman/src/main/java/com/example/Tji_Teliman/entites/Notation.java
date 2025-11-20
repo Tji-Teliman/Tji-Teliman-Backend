@@ -15,6 +15,8 @@ import jakarta.persistence.TemporalType;
 import jakarta.persistence.Transient;
 import jakarta.persistence.OneToOne;
 import java.util.Date;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import lombok.Getter;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -55,6 +57,7 @@ public class Notation {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "candidature_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Candidature candidature;
 
     @PrePersist

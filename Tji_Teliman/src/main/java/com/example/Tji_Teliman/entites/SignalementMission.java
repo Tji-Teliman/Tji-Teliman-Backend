@@ -16,6 +16,8 @@ import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import jakarta.persistence.PrePersist;
 import java.util.Date;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import lombok.Getter;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -38,6 +40,7 @@ public class SignalementMission {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "mission_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Mission mission;
 
     @ManyToOne(optional = false)

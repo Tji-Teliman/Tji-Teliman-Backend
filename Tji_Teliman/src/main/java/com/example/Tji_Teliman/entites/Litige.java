@@ -4,6 +4,8 @@ import com.example.Tji_Teliman.entites.enums.StatutLitige;
 import com.example.Tji_Teliman.entites.enums.TypeLitige;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Table(name = "litige")
@@ -37,6 +39,7 @@ public class Litige {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "mission_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Mission mission;
 
     // RELATION OPTIONNELLE
