@@ -1,11 +1,18 @@
 package com.example.Tji_Teliman.mapper;
 
+import com.example.Tji_Teliman.config.FilePathConverter;
 import com.example.Tji_Teliman.dto.LitigeDTO;
 import com.example.Tji_Teliman.entites.Litige;
 import org.springframework.stereotype.Component;
 
 @Component
 public class LitigeMapper {
+
+    private final FilePathConverter filePathConverter;
+
+    public LitigeMapper(FilePathConverter filePathConverter) {
+        this.filePathConverter = filePathConverter;
+    }
 
     public LitigeDTO toDto(Litige litige) {
         if (litige == null) {
@@ -39,6 +46,9 @@ public class LitigeMapper {
             dto.setJeunePrestateurEmail(
                     litige.getJeunePrestateur().getEmail()
             );
+            dto.setJeunePrestateurPhotoUrl(
+                    filePathConverter.toRelativePath(litige.getJeunePrestateur().getUrlPhoto())
+            );
         }
 
         // Mapping Recruteur
@@ -50,6 +60,9 @@ public class LitigeMapper {
             );
             dto.setRecruteurEmail(
                     litige.getRecruteur().getEmail()
+            );
+            dto.setRecruteurPhotoUrl(
+                    filePathConverter.toRelativePath(litige.getRecruteur().getUrlPhoto())
             );
         }
 

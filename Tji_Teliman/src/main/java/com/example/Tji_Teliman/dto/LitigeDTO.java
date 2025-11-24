@@ -11,10 +11,12 @@ public class LitigeDTO {
     private Long jeunePrestateurId;
     private String jeunePrestateurNom;
     private String jeunePrestateurEmail;
+    private String jeunePrestateurPhotoUrl;
 
     private Long recruteurId;
     private String recruteurNom;
     private String recruteurEmail;
+    private String recruteurPhotoUrl;
 
     private Long missionId;
     private String missionTitre;
@@ -89,11 +91,27 @@ public class LitigeDTO {
         this.jeunePrestateurEmail = jeunePrestateurEmail;
     }
 
+    public String getJeunePrestateurPhotoUrl() {
+        return jeunePrestateurPhotoUrl;
+    }
+
+    public void setJeunePrestateurPhotoUrl(String jeunePrestateurPhotoUrl) {
+        this.jeunePrestateurPhotoUrl = jeunePrestateurPhotoUrl;
+    }
+
     public String getRecruteurEmail() {
         return recruteurEmail;
     }
 
     public void setRecruteurEmail(String recruteurEmail) {
         this.recruteurEmail = recruteurEmail;
+    }
+
+    public String getRecruteurPhotoUrl() {
+        return recruteurPhotoUrl;
+    }
+
+    public void setRecruteurPhotoUrl(String recruteurPhotoUrl) {
+        this.recruteurPhotoUrl = recruteurPhotoUrl;
     }
 }
