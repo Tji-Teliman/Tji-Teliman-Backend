@@ -12,6 +12,7 @@ import java.util.Optional;
 public interface CandidatureRepository extends JpaRepository<Candidature, Long> {
     List<Candidature> findByJeunePrestateur(JeunePrestateur jeunePrestateur);
     List<Candidature> findByMission(Mission mission);
+    List<Candidature> findByMissionAndStatut(Mission mission, StatutCandidature statut);
     boolean existsByJeunePrestateurAndMission(JeunePrestateur jeunePrestateur, Mission mission);
     Optional<Candidature> findByJeunePrestateurAndMission(JeunePrestateur jeunePrestateur, Mission mission);
     List<Candidature> findByStatut(StatutCandidature statut);

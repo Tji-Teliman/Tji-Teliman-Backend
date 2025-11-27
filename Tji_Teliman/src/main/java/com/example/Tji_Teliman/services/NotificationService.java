@@ -68,6 +68,13 @@ public class NotificationService {
     }
 
     @Transactional
+    public Notification notifyMissionAnnulee(Utilisateur jeune, Mission mission) {
+        String titre = "Mission annulée";
+        String contenu = "La mission '" + mission.getTitre() + "' a été annulée par le recruteur.";
+        return notify(jeune, titre, contenu, TypeNotification.MISSION_ANNULEE, mission, null, null);
+    }
+
+    @Transactional
     public Notification notifyPaiementEffectue(Utilisateur destinataire, Paiement paiement) {
         String titre = "Paiement effectué";
         String contenu = "Le paiement total de " + paiement.getMontantTotal() + " (dont " + paiement.getMontant() + " de rémunération et " + paiement.getFrais() + " de frais) a été effectué.";

@@ -1,9 +1,11 @@
 package com.example.Tji_Teliman.services;
 
 import com.example.Tji_Teliman.entites.Categorie;
+import com.example.Tji_Teliman.entites.Candidature;
 import com.example.Tji_Teliman.entites.Mission;
 import com.example.Tji_Teliman.entites.Recruteur;
 import com.example.Tji_Teliman.entites.enums.StatutMission;
+import com.example.Tji_Teliman.entites.enums.StatutCandidature;
 import com.example.Tji_Teliman.dto.MissionDTO;
 import com.example.Tji_Teliman.config.FilePathConverter;
 import com.example.Tji_Teliman.repository.CandidatureRepository;
@@ -191,25 +193,57 @@ public class MissionService {
 
     @Transactional
     public void delete(Long id) {
-        if (!missionRepository.existsById(id)) throw new IllegalArgumentException("Mission introuvable");
-        missionRepository.deleteById(id);
+        Mission mission = missionRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Mission introuvable"));
+        
+        if (mission.getStatut() != StatutMission.EN_ATTENTE) {
+            throw new IllegalArgumentException("Seules les missions en attente peuvent être annulées");
+        }
+        
+        Date today = truncateToDate(new Date());
+        if (mission.getDateDebut() != null && !truncateToDate(mission.getDateDebut()).after(today)) {
+            throw new IllegalArgumentException("Impossible d'annuler une mission qui a déjà débuté");
+        }
+        
+        List<Candidature> candidaturesAcceptees = candidatureRepository.findByMissionAndStatut(mission, StatutCandidature.ACCEPTEE);
+        for (Candidature candidature : candidaturesAcceptees) {
+            if (candidature.getJeunePrestateur() != null) {
+                notificationService.notifyMissionAnnulee(candidature.getJeunePrestateur(), mission);
+            }
+        }
+        
+        missionRepository.delete(mission);
     }
 
     @Transactional
     public void verifierMissionsTerminees() {
-        Date now = new Date();
+        Date now = truncateToDate(new Date());
         List<Mission> missions = missionRepository.findAll();
         
         for (Mission mission : missions) {
-            if (mission.getStatut() == StatutMission.EN_COURS && mission.getDateFin() != null) {
-                // Comparaison à la date (ignorer l'heure) : si dateFin <= aujourd'hui => TERMINEE
-                Date fin = truncateToDate(mission.getDateFin());
-                Date today = truncateToDate(now);
-                if (!fin.after(today)) { // fin <= today
-                    mission.setStatut(StatutMission.TERMINEE);
-                    missionRepository.save(mission);
-                    notificationService.notifyMissionTerminee(mission.getRecruteur(), mission);
-                    paiementService.createPendingPaiementsForMission(mission);
+            boolean statutMisAJour = false;
+            boolean missionTerminee = false;
+            
+            Date dateDebutMission = mission.getDateDebut() != null ? truncateToDate(mission.getDateDebut()) : null;
+            Date dateFinMission = mission.getDateFin() != null ? truncateToDate(mission.getDateFin()) : null;
+            
+            // Passer automatiquement la mission en cours lorsque la date de début est atteinte
+            if (mission.getStatut() == StatutMission.EN_ATTENTE && dateDebutMission != null && !dateDebutMission.after(now)) {
+                mission.setStatut(StatutMission.EN_COURS);
+                statutMisAJour = true;
+            }
+            
+            // Passer automatiquement la mission en terminée lorsque la date de fin est atteinte
+            if (mission.getStatut() == StatutMission.EN_COURS && dateFinMission != null && !dateFinMission.after(now)) {
+                mission.setStatut(StatutMission.TERMINEE);
+                statutMisAJour = true;
+                missionTerminee = true;
+            }
+            
+            if (statutMisAJour) {
+                Mission savedMission = missionRepository.save(mission);
+                if (missionTerminee) {
+                    notificationService.notifyMissionTerminee(savedMission.getRecruteur(), savedMission);
+                    paiementService.createPendingPaiementsForMission(savedMission);
                 }
             }
         }
@@ -239,6 +273,37 @@ public class MissionService {
         // Notifier le recruteur que la mission est terminée et qu'il doit effectuer le paiement
         notificationService.notifyMissionTerminee(mission.getRecruteur(), savedMission);
         paiementService.createPendingPaiementsForMission(savedMission);
+        
+        return savedMission;
+    }
+
+    @Transactional
+    public Mission annulerMission(Long missionId, Long recruteurId) {
+        Mission mission = missionRepository.findById(missionId)
+                .orElseThrow(() -> new IllegalArgumentException("Mission introuvable"));
+        
+        if (mission.getRecruteur() == null || !mission.getRecruteur().getId().equals(recruteurId)) {
+            throw new IllegalArgumentException("Vous n'êtes pas autorisé à annuler cette mission");
+        }
+        
+        if (mission.getStatut() != StatutMission.EN_ATTENTE) {
+            throw new IllegalArgumentException("Seules les missions en attente peuvent être annulées");
+        }
+        
+        Date today = truncateToDate(new Date());
+        if (mission.getDateDebut() != null && !truncateToDate(mission.getDateDebut()).after(today)) {
+            throw new IllegalArgumentException("Impossible d'annuler une mission qui a déjà débuté");
+        }
+        
+        mission.setStatut(StatutMission.ANNULEE);
+        Mission savedMission = missionRepository.save(mission);
+        
+        List<Candidature> candidaturesAcceptees = candidatureRepository.findByMissionAndStatut(savedMission, StatutCandidature.ACCEPTEE);
+        for (Candidature candidature : candidaturesAcceptees) {
+            if (candidature.getJeunePrestateur() != null) {
+                notificationService.notifyMissionAnnulee(candidature.getJeunePrestateur(), savedMission);
+            }
+        }
         
         return savedMission;
     }
