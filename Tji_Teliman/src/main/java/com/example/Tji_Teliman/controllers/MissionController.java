@@ -159,6 +159,22 @@ public class MissionController {
         }
     }
 
+    // Annuler une mission avant son début (recruteur connecté)
+    @PutMapping("/{id}/annuler")
+    public ResponseEntity<?> annulerMission(@PathVariable Long id, HttpServletRequest httpRequest) {
+        try {
+            Long recruteurId = jwtUtils.getUserIdFromToken(httpRequest);
+            if (recruteurId == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Token manquant ou invalide", null));
+            }
+            Mission mission = missionService.annulerMission(id, recruteurId);
+            MissionDTO dto = missionService.toDTO(mission);
+            return ResponseEntity.ok(new ApiResponse(true, "Mission annulée avec succès", dto));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, ex.getMessage(), null));
+        }
+    }
+
     // Mettre à jour une mission
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody CreateMissionRequest req) {

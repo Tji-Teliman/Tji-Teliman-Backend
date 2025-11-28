@@ -88,6 +88,7 @@ public class CandidatureService {
                 .orElseThrow(() -> new IllegalArgumentException("Jeune prestateur introuvable"));
         
         return candidatureRepository.findByJeunePrestateur(jeunePrestateur).stream()
+                .filter(c -> c.getMission() == null || c.getMission().getStatut() != StatutMission.ANNULEE)
                 .map(this::toCandidatureDTO)
                 .collect(Collectors.toList());
     }
@@ -210,11 +211,6 @@ public class CandidatureService {
         
         // Mettre à jour le statut de la candidature
         candidature.setStatut(StatutCandidature.ACCEPTEE);
-        
-        // Mettre à jour le statut de la mission
-        Mission mission = candidature.getMission();
-        mission.setStatut(StatutMission.EN_COURS);
-        missionRepository.save(mission);
         
         Candidature saved = candidatureRepository.save(candidature);
         // Notification au jeune
